@@ -8,13 +8,14 @@ verify.imbalance, keeps the best rectangle per (k, n), and writes
   results/budget.csv                 best value per cell for each time budget
 Seeds map to budgets via BUDGET below.
 """
+from pathlib import Path
 import csv
 import glob
 import os
 import re
 from fractions import Fraction
 
-from verify import imbalance, fmt
+from verify import imbalance, fmt, EXPECTED_CELLS
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUDGET = {1: 60, 2: 300, 3: 600}   # seed -> seconds per run
@@ -25,22 +26,42 @@ def load_previous():
     with open(os.path.join(ROOT, 'data', 'previous_best.csv')) as fh:
         rows = [l for l in fh if not l.startswith('#')]
     for row in csv.DictReader(rows):
-        prev[(int(row['k']), int(row['n']))] = int(row['imbalance3'])
+        key = (int(row['k']), int(row['n']))
+        if key in prev:
+            raise ValueError(f"duplicate baseline instance: {key}")
+        prev[key] = int(row['imbalance3'])
+    if set(prev) != EXPECTED_CELLS:
+        raise ValueError("baseline must contain exactly the 51 benchmark instances")
     return prev
 
 
 def load_runs():
     runs = []
-    for f in glob.glob(os.path.join(ROOT, 'results', 'raw', 'r_*_s*.txt')):
-        k, n, seed = map(int, re.search(r'r_(\d+)_(\d+)_s(\d+)\.txt$', f).groups())
-        lines = open(f).read().strip().split('\n')
-        if not lines[0].startswith('COST3'):
-            continue            # unfinished or failed run
+    seen = set()
+    expected = {(k, n, s) for k, n in EXPECTED_CELLS for s in (1, 2)}
+    expected |= {(k, n, 3) for k, n in EXPECTED_CELLS if k >= 4 and n >= 9}
+    # Stable ordering selects the lowest seed when objectives tie.
+    for f in sorted(glob.glob(os.path.join(ROOT, 'results', 'raw', '*.txt'))):
+        match = re.fullmatch(r'r_(\d+)_(\d+)_s(\d+)\.txt', os.path.basename(f))
+        if not match:
+            raise ValueError(f"unexpected raw filename: {f}")
+        k, n, seed = map(int, match.groups())
+        key = (k, n, seed)
+        if key in seen or key not in expected:
+            raise ValueError(f"duplicate or unexpected run: {f}")
+        seen.add(key)
+        lines = Path(f).read_text().strip().split('\n')
+        if not re.fullmatch(r'COST3 \d+', lines[0]):
+            raise ValueError(f"unfinished or malformed solver output: {f}")
         c3 = int(lines[0].split()[1])
         R = [list(map(int, l.split())) for l in lines[1:]]
+        if len(R) != k or any(len(row) != n for row in R):
+            raise ValueError(f"filename dimensions do not match rectangle: {f}")
         if 3 * imbalance(R) != c3:
             raise SystemExit(f"solver claim does not verify: {f}")
         runs.append((k, n, seed, c3, R))
+    if seen != expected:
+        raise ValueError(f"incomplete run set; missing {sorted(expected - seen)}")
     return runs
 
 
@@ -69,12 +90,11 @@ def main():
             c3, R = best[(k, n)]
             status = 'improved' if c3 < p else ('matched' if c3 == p else 'worse')
             w.writerow([k, n, p, c3, fmt(Fraction(p, 3)), fmt(Fraction(c3, 3)), status])
-            if c3 <= p:
-                with open(os.path.join(rect_dir, f'k{k}_n{n}.txt'), 'w') as out:
-                    out.write(f"# {k} x {n} Latin rectangle, imbalance {fmt(Fraction(c3, 3))} "
-                              f"(previous best {fmt(Fraction(p, 3))})\n")
-                    for row in R:
-                        out.write(' '.join(f'{x:2d}' for x in row) + '\n')
+            with open(os.path.join(rect_dir, f'k{k}_n{n}.txt'), 'w') as out:
+                out.write(f"# {k} x {n} Latin rectangle, imbalance {fmt(Fraction(c3, 3))} "
+                          f"(previous best {fmt(Fraction(p, 3))})\n")
+                for row in R:
+                    out.write(' '.join(f'{x:2d}' for x in row) + '\n')
     with open(os.path.join(ROOT, 'results', 'budget.csv'), 'w', newline='') as fh:
         w = csv.writer(fh)
         w.writerow(['k', 'n', 'seconds', 'imbalance3'])

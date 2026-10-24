@@ -11,18 +11,21 @@ Usage:
     verify.py                         # check results/rectangles/*.txt against results/results.csv
     verify.py FILE [FILE ...]         # print the imbalance of each file
 """
+from pathlib import Path
 import csv
 import glob
 import os
+import re
 import sys
 from fractions import Fraction
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EXPECTED_CELLS = {(k, n) for n in range(8, 14) for k in range(2, n)}
 
 
 def read_rectangle(path):
     rows = []
-    for line in open(path):
+    for line in Path(path).read_text().splitlines():
         line = line.strip()
         if line and not line.startswith('#'):
             rows.append([int(x) for x in line.split()])
@@ -30,6 +33,8 @@ def read_rectangle(path):
 
 
 def imbalance(R):
+    if not R or not R[0]:
+        raise ValueError("empty rectangle")
     k, n = len(R), len(R[0])
     if k > n:
         raise ValueError("more rows than columns")
@@ -61,13 +66,23 @@ def main(argv):
     claimed = {}
     with open(os.path.join(ROOT, 'results', 'results.csv')) as fh:
         for row in csv.DictReader(fh):
-            claimed[(int(row['k']), int(row['n']))] = int(row['new_imbalance3'])
+            key = (int(row['k']), int(row['n']))
+            if key in claimed:
+                raise ValueError(f"duplicate CSV instance: {key}")
+            claimed[key] = int(row['new_imbalance3'])
+    if set(claimed) != EXPECTED_CELLS:
+        raise ValueError("results.csv must contain exactly the 51 benchmark instances")
     bad = 0
     files = sorted(glob.glob(os.path.join(ROOT, 'results', 'rectangles', '*.txt')))
+    expected_files = {f'k{k}_n{n}.txt' for k, n in EXPECTED_CELLS}
+    if {os.path.basename(f) for f in files} != expected_files:
+        raise ValueError("rectangle files must cover exactly the 51 benchmark instances")
     for f in files:
         R = read_rectangle(f)
-        k, n = len(R), len(R[0])
         I = imbalance(R)
+        k, n = map(int, re.fullmatch(r'k(\d+)_n(\d+)\.txt', os.path.basename(f)).groups())
+        if (len(R), len(R[0])) != (k, n):
+            raise ValueError(f"filename dimensions do not match rectangle: {f}")
         ok = claimed.get((k, n)) == 3 * I
         bad += not ok
         print(f"{k:2d} x {n:2d}  I = {fmt(I):>6}  {'OK' if ok else 'MISMATCH with results.csv'}")
@@ -76,4 +91,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except (ValueError, OSError, KeyError) as exc:
+        print(f"Verification failed: {exc}", file=sys.stderr)
+        sys.exit(1)

@@ -1,29 +1,29 @@
-# Balanced Latin Rectangles: new best-known values
+# Balanced Latin Rectangles: improved published upper bounds
 
-A simple simulated-annealing search improves the best known imbalance of **33 of the 51**
-non-square instances (8 ≤ n ≤ 13) from
-[Voboril, Peruvemba Ramaswamy & Szeider, CP 2025](https://doi.org/10.4230/LIPIcs.CP.2025.36),
-and matches the other 18. It is also fast: on one laptop core it beats each previous record after a
-median of 0.12 CPU seconds, where the previous records came from pipelines running for hours per instance.
-Every rectangle is included and can be checked independently.
+A simple simulated-annealing search improves **33 of the 51** non-square instances
+in Table 1 of [Voboril, Peruvemba Ramaswamy & Szeider, CP 2025](https://doi.org/10.4230/LIPIcs.CP.2025.36)
+and matches the other 18. Every rectangle is included and can be checked independently.
+“Record” below refers to that reference table, not an exhaustive priority claim.
 
-Paper: [`paper/main.pdf`](paper/main.pdf) — *Simple Local Search Sets 33 New Records for Balanced Latin Rectangles*.
+Paper: [`paper/main.pdf`](paper/main.pdf) — *Simple Local Search Improves 33 Published Upper Bounds for Balanced Latin Rectangles*.
 
 <!-- RESULTS:START -->
 
 ## Results
 
-**33 improved, 18 matched, 0 worse** out of 51 instances. Improvements average **18.5%** and reach **39.4%** (12×13: 274.0 → 166.0). Previous values are from Table 1 of CP 2025; all new values are verified by `code/verify.py`.
+**33 improved, 18 matched, 0 worse** out of 51 instances. Across the improved instances, reductions average **18.5%** and reach **39.4%** (12×13: 274.0 → 166.0). Previous values are from Table 1 of CP 2025; all new values are verified by `code/verify.py`.
 
-### Speed
+### First-improvement timing
 
-Beyond better values, the search is fast. With 5 seeds per instance, each stopping as soon as it beats the CP 2025 record, the **median time to beat a record is 0.12 s** of CPU time on one laptop core, and **every run beats it within 2.4 min**. The CP 2025 pipeline spends at least 4 hours per instance per approach (after a 4-hour Gurobi baseline), on 10-core servers.
+These times do not measure attainment of the final table values, which use up to 16 allocated CPU minutes per instance. Cross-study times are not controlled speedups.
+
+In the historical first-improvement experiment on the 33 improved instances, with 5 seeds per instance, each stopping as soon as it beats the CP 2025 record, the **pooled median over all 165 runs is 0.12 s** of CPU time on one laptop core, and **every run beats it within 2.4 min**. The CP 2025 pipeline spends at least 4 hours per instance per approach (after a 4-hour Gurobi baseline), on 10-core servers.
 
 ![Time until each CP 2025 record is beaten](figures/speed.png)
 
-*CPU time until the search beats the CP 2025 record: median (dot) and range (bar) over 5 seeds, log scale. The dashed line marks one 4-hour run of one CP 2025 approach.*
+*CPU time until the search beats the CP 2025 record: median (dot) and range (bar) over 5 seeds, log scale. The dashed line marks a CP 2025 four-hour budget, not time to the reference quality.*
 
-The SAT approach of CP 2023 reports solving times for four rectangles. The search reaches the same imbalance in under a tenth of a second:
+The SAT approach of CP 2023 reports solving times for four rectangles. The search reaches or improves the target imbalance in under a tenth of a second:
 
 ![Time to match the CP 2023 SAT results](figures/speed_cp2023.png)
 
@@ -34,7 +34,7 @@ The SAT approach of CP 2023 reports solving times for four rectangles. The searc
 | 4 × 11 | 118 | 1.7 h | 0.04 s | 0.04 s |
 | 6 × 11 | 124 | 5.5 h | 0.07 s | 0.07 s |
 
-*Caveats: different hardware (Xeon E5-2640 v4 servers vs. an Apple M3 laptop; the single-core gap is a small factor), CP 2025 does not report when within its runs each record was found, and we did not rerun either pipeline. See the paper for details.*
+*Caveats: different hardware (Xeon E5-2640 v4 servers vs. an Apple M3 laptop; no hardware calibration was performed; ), CP 2025 does not report when within its runs each record was found, and we did not rerun either pipeline. See the paper for details.*
 
 ### At a glance
 
@@ -117,13 +117,13 @@ Imbalance values; `x.3` and `x.6` mean x + 1/3 and x + 2/3. The last column link
 
 ![Previous best vs. new value for every improved instance](figures/dumbbell.png)
 
-*Previous best (open circles) and new value (filled) for each improved instance. Gains grow with instance size.*
+*Previous best (open circles) and new value (filled) for each improved instance. Reductions are relative to CP 2025 Table 1.*
 
 ### Effect of the time budget
 
 ![Mean reduction vs. time per run](figures/budget.png)
 
-*Mean reduction relative to the previous best over the 35 instances run at all three budgets (k ≥ 4, n ≥ 9). One single-threaded run per budget, each with a different seed. Longer runs widen the margin; the table gives the exact numbers.*
+*Mean reduction relative to the previous best over the 35 instances run at all three budgets (k ≥ 4, n ≥ 9). One single-threaded run per budget, each with a different seed. These separate seeds do not isolate the effect of budget or form one trajectory.*
 
 | time per run | 1 min | 5 min | 10 min |
 |---|---:|---:|---:|
@@ -157,11 +157,11 @@ Values like `158.6` mean 158 + 2/3, and `.3` means + 1/3, as in the literature.
 | `results/budget.csv` | Best value per cell for each time budget |
 | `results/raw/` | Raw solver output of every run |
 | `data/previous_best.csv` | Baseline: CP 2025, Table 1 |
-| `data/published/` | The 11 rectangles printed in CP 2023 and CP 2025, with their reported imbalance |
+| `data/published/` | The 14 rectangles printed in CP 2023 and CP 2025, with their reported imbalance |
 | `results/timing.csv` | Time-to-target runs (5 seeds per instance) |
-| `code/sa.c` | The search (simulated annealing, about 130 lines of C) |
+| `code/sa.c` | The search (simulated annealing, compact C implementation) |
 | `code/verify.py` | Independent checker |
-| `code/test_checker.py` | Confirms the checker reproduces all 11 published rectangles' reported values |
+| `code/test_checker.py` | Confirms the checker reproduces all 14 published rectangles' reported values |
 | `code/timing.py` | Speed experiment: time to beat CP 2025 records and to match CP 2023 results |
 | `code/collect.py` | Verifies all raw runs and builds `results/` |
 | `code/plots.py`, `code/make_tables.py`, `code/make_readme.py` | Figures, the paper's table and numbers, and this README's results section |
@@ -181,17 +181,17 @@ cd ../paper && tectonic main.tex   # or: pdflatex + bibtex
 
 Single run: `./sa k n seconds seed` prints `COST3 <3·I>` followed by the rectangle.
 Runs measure CPU time and are single-threaded. Results depend on the seed and the machine speed,
-so a rerun will not reproduce the exact rectangles, but it should give values of similar quality.
+so a rerun need not reproduce exact rectangles or values. No quality guarantee is implied.
 
 ## Scope and caveats
 
 - The new values are **upper bounds**. Optimality is open for every improved instance.
-- One run per cell and time budget. No variance across seeds is reported.
+- One run per cell and time budget. Final-quality variance across seeds is not measured; first-improvement timings use five seeds.
 - The comparison with CP 2025 uses their reported results. We did not rerun their pipeline.
 
 ## How to cite
 
-Zhengyu Li and Vijay Ganesh. *Balanced Latin Rectangles: New Best-Known Values via Simple Local Search.*
+Zhengyu Li and Vijay Ganesh. *Balanced Latin Rectangles: Improved Published Upper Bounds via Simple Local Search.*
 2026. https://github.com/BrianLi009/Balanced-Latin-Rectangles
 
 GitHub's "Cite this repository" button gives this in BibTeX and APA format (from `CITATION.cff`).
@@ -200,3 +200,29 @@ GitHub's "Cite this repository" button gives this in BibTeX and APA format (from
 
 - Code (`code/`): [MIT](LICENSE).
 - Data, results, figures and paper (`data/`, `results/`, `figures/`, `paper/`): [CC BY 4.0](LICENSE-data).
+
+See [validation/README.md](validation/README.md) for the full independent timing rerun and retained witnesses.
+
+## Validation and measurement provenance
+
+Run `python3 code/test_pipeline.py` for corruption/missing-data regression checks and
+`python3 code/test_checker.py` for the 14 published fixtures. Collection requires all
+137 expected runs and selects the lowest seed when objective values tie. An older
+collection could select a different equally good witness; objective values are unchanged.
+Publication generators require all 185 timing rows, all five seeds, and successful targets.
+A failed target must be discussed explicitly before generating a new paper.
+
+The committed `results/timing.csv` contains historical measurements. Original per-run
+stdout/stderr and compiler metadata are unavailable; the CSV alone does not certify
+those timings. The revised runner saves witnesses, stderr, execution metadata, source,
+and binary hashes in `results/timing_runs/`. Rebuild before running it; the source hash
+records the source present, not proof that an arbitrary existing binary used that source.
+Use `python3 code/timing.py --output results/timing-new.csv` to retain the historical CSV.
+The timer excludes initialization, process launch, output, and external checking; CPU
+budget checks occur every 65,536 proposals. The full quality experiment allocates
+10 hours 56 minutes of CPU across 137 runs, followed by the timing experiment.
+
+The repository must be accessible to reviewers before submission. Do not describe the
+artifact as publicly released while access remains private. Earlier local search (2017)
+has not been compared head-to-head; penalty/neighborhood ablations and equal-hardware
+comparisons remain future experiments, not established conclusions.

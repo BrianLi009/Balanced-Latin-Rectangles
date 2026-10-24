@@ -9,7 +9,11 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
+from timing import load_timing_results
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Refuse incomplete/censored timing data before writing any publication artifacts.
+VERIFIED_TIMING = load_timing_results()
 FIG = os.path.join(ROOT, 'figures')
 
 # Ink and ramp (validated reference palette, light surface)
@@ -161,7 +165,7 @@ def load_timing():
     if not os.path.exists(path):
         return None
     g = {}
-    for r in csv.DictReader(open(path)):
+    for r in VERIFIED_TIMING:
         key = (r['kind'], int(r['k']), int(r['n']))
         g.setdefault(key, {'t': [], 'ref': r['reference_seconds'], 'reached': []})
         g[key]['reached'].append(int(r['reached']))
@@ -189,7 +193,7 @@ def speed(g):
         t = [max(v, floor) for v in g[key]['t']]
         ax.plot([min(t), max(t)], [y, y], color=GRID, linewidth=3, solid_capstyle='round', zorder=1)
         ax.scatter([st.median(t)], [y], s=28, color=BLUE, edgecolor='white', linewidth=1.2, zorder=3)
-    for x, label, side in ((60, '1 min', 'left'), (4 * 3600, 'one CP 2025 run:\n4 h per approach,\nper instance', 'right')):
+    for x, label, side in ((60, '1 min', 'left'), (4 * 3600, 'CP 2025 budget:\n4 h per approach,\nper instance', 'right')):
         ax.axvline(x, color=INK2, linewidth=0.8, linestyle=(0, (3, 3)), zorder=0)
         ax.text(x * 1.15 if side == 'left' else x / 1.15, len(rows) - 0.6, label, fontsize=7.5,
                 color=INK2, va='top', ha=side)
@@ -225,7 +229,7 @@ def speed_cp2023(g):
     ax.set_xticks([0.001, 0.1, 10, 600, 36000], ['1 ms', '0.1 s', '10 s', '10 min', '10 h'])
     ax.set_yticks(range(len(rows)), [f'{k}×{n}' for _, k, n in reversed(rows)])
     ax.tick_params(axis='y', length=0)
-    ax.set_xlabel('time to find a rectangle of the same imbalance (log scale)')
+    ax.set_xlabel('time to reach or improve target imbalance (log scale)')
     ax.scatter([], [], s=30, facecolor='white', edgecolor=NEUTRAL, linewidth=1.5, label='SAT, CP 2023 (reported)')
     ax.scatter([], [], s=32, color=BLUE, label='this work (median of 5 seeds)')
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.28), ncol=2, frameon=False, fontsize=8)
@@ -266,7 +270,7 @@ def records_speed(rows, g):
     a2.set_xticks([0.01, 0.1, 1, 60, 3600, 4 * 3600], ['10 ms', '0.1 s', '1 s', '1 min', '1 h', '4 h'])
     for x in (60, 4 * 3600):
         a2.axvline(x, color=INK2, linewidth=0.7, linestyle=(0, (3, 3)), zorder=0)
-    a2.text(4 * 3600 / 1.2, N - 0.6, 'one CP 2025\nrun (4 h)', fontsize=6.5, color=INK2, ha='right', va='top')
+    a2.text(4 * 3600 / 1.2, N - 0.6, 'CP 2025\nbudget (4 h)', fontsize=6.5, color=INK2, ha='right', va='top')
     a2.set_xlabel('CPU time to beat the record (log scale)')
     a2.set_title('(b) time to beat the record, 5 seeds', fontsize=8, loc='left', color=INK)
     a2.tick_params(axis='y', length=0)
@@ -294,7 +298,7 @@ def speed_cp2023_paper(g):
     ax.set_yticks(range(len(rows)), [f'{k}×{n}' for _, k, n in reversed(rows)])
     ax.tick_params(axis='y', length=0)
     ax.set_ylim(-0.6, len(rows) - 0.4)
-    ax.set_xlabel('time to find a rectangle of the same imbalance (log scale)')
+    ax.set_xlabel('time to reach or improve target imbalance (log scale)')
     ax.scatter([], [], s=18, facecolor='white', edgecolor=NEUTRAL, linewidth=1.2, label='SAT, CP 2023 (reported)')
     ax.scatter([], [], s=20, color=BLUE, label='this work (median of 5 seeds)')
     fig.legend(loc='outside upper center', frameon=False, fontsize=7, ncol=2)

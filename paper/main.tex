@@ -19,7 +19,7 @@
 
 \input{numbers.tex}
 
-\title{Simple Local Search Sets \NumImproved{} New Records\\for Balanced Latin Rectangles}
+\title{Simple Local Search Improves \NumImproved{} Published\\Upper Bounds for Balanced Latin Rectangles}
 \author{Zhengyu Li\\ Georgia Institute of Technology\\ \texttt{brian.li@gatech.edu}
   \and Vijay Ganesh\\ Georgia Institute of Technology\\ \texttt{vganesh45@gatech.edu}}
 \date{}
@@ -28,35 +28,36 @@
 \maketitle
 
 \begin{abstract}
-A $k\times n$ Latin rectangle is \emph{balanced} when every pair of symbols has the same total
-distance, summed over the rows. The \emph{imbalance} measures how far a rectangle is from this
-ideal. Field experiments in agronomy use minimum-imbalance Latin rectangles, and finding them is
-a benchmark for constraint programming, SAT, and LLM-generated streamliners combined with
-mixed-integer programming. We show that plain simulated annealing finds rectangles at least as
-good as all published ones, and better ones on most instances. The search uses an $O(n)$ swap move and an adaptive penalty for column
-conflicts. It improves the best known imbalance on \NumImproved{} of the \NumCells{} non-square
-instances with $8\le n\le 13$ from the literature, and it matches the other \NumMatched{}. The
-improvements average \MeanGain\% and reach \MaxGain\% (\TopCell: \TopOld{} $\to$ \TopNew). The
-search is also faster by orders of magnitude. On one laptop core, it beats each previous record
-after a median of \MedianBeat{} CPU seconds over \NumSeeds{} seeds, and every run beats it within
-\MaxBeat{} seconds. The previous records came from pipelines that run for at least four hours per
-instance. For four rectangles, a SAT approach reports solving times from 32 minutes to 5.5 hours.
-Our search matches each of them in at most \MaxMatch{} seconds. We release all rectangles, an
-independent checker, and the code. The new values are upper bounds, and optimality remains open
-for every improved instance.
+A $k\times n$ Latin rectangle is balanced when every pair of symbols has the same total
+distance, summed over the rows. We evaluate simulated annealing with an $O(n)$ within-row
+swap and an adaptive penalty for column conflicts. Against Table~1 of the CP 2025 study,
+it improves \NumImproved{} of \NumCells{} non-square instances with $8\le n\le13$ and
+matches the other \NumMatched{}. The reduction averages \MeanGain\% over the improved
+instances and reaches \MaxGain\% (\TopCell: \TopOld{} $\to$ \TopNew).
+These final values use up to 16 allocated CPU minutes per instance across separate runs.
+In a separate first-improvement experiment on the \NumImproved{} improved instances,
+all \NumTimingRuns{} runs beat the reference bound: the pooled median is \MedianBeat{}
+CPU seconds and the maximum is \MaxBeat{} seconds. Four older SAT targets are reached
+or improved within \MaxMatch{} seconds in all \NumSeeds{} runs per target.
+These historical timing measurements are not controlled speedup comparisons: hardware
+differs, and CP 2025 reports budgets rather than time to the reference quality.
+We provide the rectangles, an independent exact checker, and code. The improved values
+are feasible upper bounds, not optimality certificates.
+
 \end{abstract}
 
 \section{Introduction}
 
 Latin squares and rectangles are classical tools of experimental design. In a field trial,
 spatial autocorrelation can bias a Latin layout when some pairs of treatments are always planted
-closer together than others~\citep{vanEs1993}. \emph{Spatially balanced} Latin squares remove
-this bias, because every pair of symbols has the same total
+closer together than others~\citep{vanEs1993}. \emph{Spatially balanced} Latin squares address this source of spatial imbalance, because every pair of symbols has the same total
 distance~\citep{GomesSellmann2004,LeBrasGomesSelman2012}. \citet{DiazLeBrasGomes2017} extended
 the idea to $k\times n$ rectangles. Balanced rectangles exist only in restricted cases. Díaz et
 al.\ therefore defined the \emph{imbalance} of a rectangle and asked for rectangles of minimum
-imbalance. They found this optimization problem hard for CSP, local-search and MIP methods, and
-they proposed it as a benchmark.
+imbalance. They compared CSP, local search and MIP, and reported that local search outperformed MIP
+on larger instances with $k>3$. Their local search swaps whole columns and samples row
+subsets of cyclic squares. Our within-row moves explore a different space and may cross
+column-infeasible states; we do not claim to introduce local search for this problem.
 
 Two recent studies attacked this benchmark. \citet{RamaswamySzeider2023} used SAT encodings,
 which also certify optimality with DRAT proofs. \citet{VoborilRamaswamySzeider2025} used
@@ -68,18 +69,13 @@ serve as a test problem for LLM agents that reformulate constraint models~\citep
 simulated annealing~\citep{KirkpatrickGelattVecchi1983} over rows that are permutations, with a
 swap move that costs $O(n)$ time to evaluate. A penalty for repeated symbols in a column adapts
 its weight during the search, in the spirit of strategic oscillation~\citep{GloverHao2011}. None
-of these ingredients is new. Our contribution is the outcome. We call the best known value of an
-instance before this work its \emph{record}. On the instances of
-\citet{VoborilRamaswamySzeider2025}, our search improves \NumImproved{} of the \NumCells{}
-records and is never worse. It is also fast. On a single laptop core, it beats each record after
-a median of \MedianBeat{} seconds, whereas the previous pipelines run for hours per instance. We
-release every rectangle with an independent checker, so anyone can check each record in seconds
-without trusting our solver.
-
-We see two consequences. First, the records on this benchmark were much further from optimal
-than they appeared. This matters to anyone who uses them to judge new methods. Second, new
-methods for this problem, including LLM-based ones, need a well-engineered local search as a
-baseline, and not only an exact solver with a time limit.
+of these ingredients is new. Our contribution is a set of independently verified improved
+upper bounds. Throughout, \emph{record} means the reference value in Table~1 of
+\citet{VoborilRamaswamySzeider2025}; it does not assert priority over every later or
+unpublished result. The search improves \NumImproved{} of these \NumCells{} values and
+matches the rest. The timing experiment concerns first improvement over the reference,
+not the time to obtain the final values. These results motivate including a strong
+problem-specific local-search baseline alongside exact and LLM-guided methods.
 
 \section{Problem}
 
@@ -116,20 +112,22 @@ recomputation from scratch costs $O(kn^2)$.
 \paragraph{Column conflicts.} Let $V$ be the number of excess symbol occurrences over all
 columns. Per-column counters give $V$ in $O(1)$ time per move. The search minimizes
 $3I(L) + W\cdot V$, and it records only rectangles with $V=0$. The weight $W$ starts at $k$.
-Every $2^{16}$ moves, the search multiplies $W$ by $1.02$ if the current state has conflicts and
-by $0.99$ if it has none, and it clamps $W$ to $[1, 4n^2]$. The penalty matters most when $k$ is
-close to $n$. There, almost every swap creates a conflict, so a search that effectively forbids
-conflicts stalls. Our first version used a large fixed penalty ($W=4n^2$). In 10-second runs on
-$6\times7$ and $7\times7$, it never visited a conflict-free rectangle other than its start. With
-the adaptive weight, 20-second runs reach the known optima of both instances (20.0 and 18.6).
+Every $2^{16}$ proposals, including proposals with identical columns, the search multiplies
+$W$ by $1.02$ if the current state has conflicts and by $0.99$ otherwise, clamping it to
+$[1,4n^2]$. This allows exploration through infeasible states while retaining only feasible
+incumbents. We have not isolated the benefit of this adaptation in a controlled ablation.
 
 \paragraph{Annealing schedule.} The search starts from the cyclic rectangle
 $L[i][j]=i+j \bmod n$. It accepts a move with change $\Delta$ if $\Delta\le 0$, and otherwise
-with probability $e^{-\Delta/T}$. The temperature $T$ starts at $T_0=2k$ and falls by a factor of
-$0.9999995$ after every move, with a floor of $0.05$. When the best rectangle does not improve
-for $4\cdot 10^{7}$ moves, the search resets $T$ to $T_0$. Each run is single-threaded and stops
-after a fixed CPU time. Before it reports its best rectangle, it recomputes the imbalance from
-scratch. The implementation has about 130 lines of C.
+with probability $e^{-\Delta/T}$. The temperature starts at $T_0=2k$ and is multiplied by
+$0.9999995$ after each nontrivial proposal, accepted or rejected, with a floor of $0.05$.
+The implementation samples columns independently and skips proposals with $j_1=j_2$.
+At checks every $2^{16}$ proposals, it reheats after more than $4\cdot10^7$ proposals
+since an improvement or the last reheat. Reheating also resets this counter.
+Each run is single-threaded. Its CPU timer starts after initialization and excludes
+process launch, output and external verification. Budget checks can overshoot by a
+check interval. Before reporting the best rectangle, the compact C implementation
+recomputes its imbalance from scratch.
 
 \section{Experiments}
 
@@ -140,11 +138,15 @@ the best value reported there. It already includes earlier results and four-hour
 used an Apple M3 laptop (8 cores, 16\,GB) and ran eight single-threaded runs at a time. Each
 instance got one run with a budget of 1 minute and one run with 5 minutes, with different seeds.
 The larger instances ($k\ge4$, $n\ge9$) also got one 10-minute run. We report the best rectangle
-per instance, so no instance used more than 16 CPU minutes.
+per instance, so the largest allocated total is 16 CPU minutes per instance. The 137 runs
+have a total allocated budget of 10 hours 56 minutes; these are CPU budgets, not elapsed
+wall times. The timing CSV preserves the original measurements. Their per-run stdout,
+stderr and build provenance were not archived, so they cannot be reconstructed from
+that CSV alone; the revised timing runner archives these for future experiments.
 
 \paragraph{Verification.} An independent Python program checks every reported rectangle. We wrote
 it from the definition above. It uses exact rational arithmetic and shares no code with the
-solver. To make sure that it computes the published quantity, we ran it on all eleven
+solver. As a finite cross-check of the published quantity, we ran it on all fourteen
 rectangles printed in~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025}. These include the
 eight CP 2025 records of their Figure~6, up to $12\times13$. The checker reproduces every reported
 imbalance exactly.
@@ -154,18 +156,20 @@ search improves \NumImproved{} instances, matches \NumMatched{}, and is worse on
 improved instances have $n\ge 9$ and $k\ge 3$. The search matches the record on all instances
 with $n=8$ or $k=2$, on all instances with $k=3$ except $3\times12$, and on $4\times10$,
 $5\times10$ and $6\times12$. Several of these records are proven
-optimal~\citep{RamaswamySzeider2023}. The gains grow with the size of the instance
-(Figure~\ref{fig:records}a), up to \MaxGain\% for \TopCell. The one-minute runs alone beat the
-record on \NumImprovedOneMin{} instances. Longer runs mainly widen the margin. Over the
-\NumBudgetCells{} instances that got all three budgets, the mean reduction relative to the record
-is \BudgetOneMin\% after one minute, \BudgetFiveMin\% after five minutes and \BudgetTenMin\%
-after ten minutes.
+optimal~\citep{RamaswamySzeider2023}. The maximum reduction is \MaxGain\% for \TopCell;
+the mean over the \NumImproved{} improved instances is \MeanGain\%.
+The one-minute runs alone improve \NumImprovedOneMin{} instances. Over the
+\NumBudgetCells{} instances with all three budgets, mean reductions are \BudgetOneMin\%,
+\BudgetFiveMin\% and \BudgetTenMin\% for the separate one-, five- and ten-minute runs.
+Because each budget uses a different seed, these are not checkpoints of one trajectory
+or an isolated estimate of the effect of time. Individual outcomes need not improve
+monotonically with budget.
 
 \begin{table}[tb]
 \centering
 \small
 \input{table.tex}
-\caption{Best known imbalance of $k\times n$ Latin rectangles. Bold: new value from this work,
+\caption{Reference and achieved imbalance of $k\times n$ Latin rectangles. Bold: new value from this work,
 with the record~\citep{VoborilRamaswamySzeider2025} struck through below it. Plain: record that
 our search matches.}
 \label{tab:results}
@@ -174,33 +178,32 @@ our search matches.}
 \paragraph{Speed.} To measure speed directly, we ran the search on every improved instance with
 \NumSeeds{} further seeds. Each run stopped as soon as its imbalance fell below the record, with
 a cap of five CPU minutes (Figure~\ref{fig:records}b). All \NumTimingRuns{} runs beat the record.
-The median time is \MedianBeat{} seconds, and the slowest run took \MaxBeat{} seconds. The
+The pooled median across all \NumTimingRuns{} runs is \MedianBeat{} seconds, and the slowest run took \MaxBeat{} seconds. The
 median per instance is below one second on \NumCellsUnderOneSec{} of the \NumImproved{}
 instances. It is below one minute on all of them, with a maximum of \MaxCellMedian{} seconds
-for $9\times10$. For comparison, each approach of \citet{VoborilRamaswamySzeider2025} runs for 4
-to 9 hours per instance, after a 4-hour Gurobi baseline. They also report that their
-incremental warmstart approach is still 25--60\% worse than the baseline after one minute.
+for $9\times10$. CP 2025 allocates 4 to 9 hours per approach after a four-hour
+Gurobi baseline. Those budgets are context, not measurements of time to the same quality.
+The timing experiment does not measure time to the final bounds in Table~\ref{tab:results}.
 
 \begin{figure}[tb]
 \centering
 \includegraphics{../figures/records_speed.pdf}
 \caption{All \NumImproved{} improved instances. (a)~Record (open circle) and new imbalance
 (filled). (b)~CPU time until the search beats the record, on one core: median (dot) and range
-(bar) over \NumSeeds{} seeds, log scale. The dashed lines mark one minute and one 4-hour run of
-one CP 2025 approach.}
+(bar) over \NumSeeds{} seeds, log scale. The dashed lines mark one minute and a CP 2025 four-hour budget, not its time to the reference bound.}
 \label{fig:records}
 \end{figure}
 
 \citet{RamaswamySzeider2023} report the SAT solving time for four rectangles that set records at
 that time. The times range from 32 minutes ($3\times10$, imbalance 84) to 5.5 hours
 ($6\times11$, imbalance 124). Figure~\ref{fig:speedsat} shows all four. In every run, our search
-reaches the same imbalance within \MaxMatch{} seconds. By the median, it is at least
-\MinSpeedupSAT{} times faster.
+reaches or improves the target imbalance within \MaxMatch{} seconds. This is a
+cross-study comparison of reported times, not a calibrated speedup.
 
 \begin{figure}[tb]
 \centering
 \includegraphics{../figures/speed_cp2023_paper.pdf}
-\caption{Time to find a rectangle with the imbalance that the SAT approach
+\caption{Time to reach or improve the target imbalance that the SAT approach
 of~\citet{RamaswamySzeider2023} reports, next to its reported solving time. Ours: median of
 \NumSeeds{} seeds. Log scale.}
 \label{fig:speedsat}
@@ -208,56 +211,44 @@ of~\citet{RamaswamySzeider2023} reports, next to its reported solving time. Ours
 
 \section{Discussion}
 
-\paragraph{Why does a simple method do so well?} We have not tested this, but the structure of
-the problem suggests an explanation. The objective is a sum of $\binom n2$ absolute deviations. A
-MIP model must linearize every one of them. Its LP relaxation can make all pairs look nearly
-balanced at once, so it likely gives the solver little guidance. Streamliners help the solver
-because they restrict it to a structured subspace, but the best rectangles need not lie in that
-subspace. Local search avoids both problems. The search updates the objective exactly and
-cheaply, the swap neighbourhood is natural, and the penalty lets the search cross infeasible
-states. The problem suits annealing unusually well, and we do not claim that the comparison
-carries over to other problems.
+\paragraph{Interpretation.} Incremental evaluation makes each proposal inexpensive, while
+penalized column conflicts allow transitions between feasible rectangles. Weak LP
+relaxations and restrictions imposed by streamliners are possible explanations for the
+relative results, but we did not measure relaxation gaps or isolate these mechanisms.
+The experiments establish achievable bounds, not a causal explanation of performance.
 
-\paragraph{What this means for LLM-based methods.} The previous records came from a pipeline that
-combines Gurobi, five LLMs and an evolutionary search over streamliners. This pipeline runs for
-hours per instance. A simulated-annealing search of about 130 lines of C improves
-\NumImproved{} of these records and matches the other \NumMatched{}, within seconds. We do not
-read this result as a verdict on LLM-generated streamliners. Their goal is generality across
-constraint models, not the best solver for one problem. A general method can lose to a
-specialized one on a single benchmark. We do read the result as a reminder about baselines.
-Local search for balanced Latin designs goes back at least to \citet{SmithGomesFernandez2005},
-and \citet{DiazLeBrasGomes2017} included it among their methods. Yet the two recent studies of
-this benchmark~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025} compare only against
-exact solvers and earlier records. New methods for this benchmark, LLM-based or not, should
-report a strong problem-specific baseline next to the exact solvers.
+\paragraph{Relation to earlier local search.} Local search for balanced Latin designs
+predates this work~\citep{SmithGomesFernandez2005,DiazLeBrasGomes2017}.
+In particular, the 2017 rectangle study already found local search competitive with,
+and on larger cases better than, MIP. Its whole-column swaps and selection of rows from
+cyclic squares differ from our within-row neighborhood and infeasible intermediate
+states. We have not rerun that method head-to-head, so we cannot attribute our gains
+to one of these differences. The newer bounds provide a useful reference for exact,
+LLM-guided and local-search approaches; they do not establish a general ranking of
+these algorithm families.
 
-\paragraph{How fair is the speed comparison?} The gap spans four to five orders of magnitude, so
-we state its caveats plainly.
-\begin{enumerate}
-\item The hardware differs. The earlier work used Intel Xeon E5-2640~v4 servers from 2016. We
-used an Apple M3 laptop from 2023. Its single-core speed is higher by a small factor, not by
-orders of magnitude.
-\item CP 2025 does not report when within its runs it found each record. We therefore compare our
-time to beat a record with the length of their runs, not with their time to reach the record.
-\item The CP 2023 times come from a complete SAT solver on a decision encoding. These instances
-are satisfiable, so the solver had to find a rectangle, which is the same task as ours. Its
-encoding, however, is built to prove infeasibility as well.
-\item We did not rerun either pipeline ourselves.
-\end{enumerate}
-Together, these caveats are unlikely to explain a gap of this size.
+\paragraph{Timing comparability.} The original measurements used an Apple M3 laptop;
+the earlier studies used Intel Xeon E5-2640~v4 servers. We did not calibrate their
+relative performance or rerun the earlier pipelines. CP 2025 does not report time to
+each reference bound. CP 2023 reports finding times for satisfiable decision instances,
+but its solver also supports infeasibility proofs, which our heuristic cannot provide.
+Initialization, launch and verification are outside our reported search timer.
+Consequently neither comparison establishes a hardware-controlled speedup.
 
 \paragraph{Limitations.} The new values are upper bounds. We prove nothing about optimality, and
 the size of the improvements suggests that the remaining gap to the optimum may still be large.
 The final records come from one run per instance and budget. Only the speed experiment uses
-several seeds. Finally, the benchmark stops at $n=13$, and larger instances are an obvious next
+several seeds. We also lack controlled penalty and neighborhood ablations and a direct comparison
+with the earlier local-search implementation. Finally, the benchmark stops at $n=13$, and larger instances are an obvious next
 step.
 
 \section{Conclusion}
 
-A short, standard simulated-annealing search improves \NumImproved{} of the \NumCells{} best
-known imbalance values for balanced Latin rectangles in the recent literature, and it matches
-the rest. It beats each record within seconds on a laptop, where earlier methods ran for hours
-on a server. Natural next steps follow from this.
+A short, standard simulated-annealing search improves \NumImproved{} of the \NumCells{} reference
+imbalance values for balanced Latin rectangles in CP 2025 Table~1, and it matches
+the rest. All 165 first-improvement runs on the 33 improved instances beat their reference
+within 143 CPU seconds in the historical timing data. This is distinct from the
+final-quality experiment and does not establish a controlled speedup. Natural next steps follow from this.
 \begin{itemize}
 \item Prove lower bounds or optimality for the improved instances, for example with the SAT
 approach of \citet{RamaswamySzeider2023}.
@@ -265,7 +256,7 @@ approach of \citet{RamaswamySzeider2023}.
 \item Compare exact, LLM-guided and local-search methods on equal hardware.
 \end{itemize}
 
-\paragraph{Data and code.} Rectangles, checker, solver and scripts:
+\paragraph{Data and code.} The artifacts accompanying this manuscript include rectangles, checker, solver and scripts:
 \url{https://github.com/BrianLi009/Balanced-Latin-Rectangles}.
 
 \FloatBarrier
