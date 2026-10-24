@@ -11,7 +11,7 @@ Paper: [`paper/main.pdf`](paper/main.pdf) — *Simple Local Search Sets 33 New R
 
 ## Results
 
-**33 improved, 18 matched, 0 worse** out of 51 instances. Improvements average **18.3%** and reach **34.1%** (10×13: 240.6 → 158.6). Previous values are from Table 1 of CP 2025; all new values are verified by `code/verify.py`.
+**33 improved, 18 matched, 0 worse** out of 51 instances. Improvements average **18.5%** and reach **39.4%** (12×13: 274.0 → 166.0). Previous values are from Table 1 of CP 2025; all new values are verified by `code/verify.py`.
 
 ### At a glance
 
@@ -30,7 +30,7 @@ Paper: [`paper/main.pdf`](paper/main.pdf) — *Simple Local Search Sets 33 New R
 | **10** | 92.0 | 80.0 | 78.6 | 66.6 | **60.0** ~~70.0~~ | **58.0** ~~72.0~~ | **58.6** ~~82.6~~ | **64.0** ~~70.0~~ |  |  |  |
 | **11** | 124.0 | 114.0 | **104.0** ~~112.0~~ | **94.0** ~~116.0~~ | **88.0** ~~108.0~~ | **84.0** ~~118.0~~ | **78.0** ~~114.0~~ | **84.0** ~~120.0~~ | **100.0** ~~110.0~~ |  |  |
 | **12** | 168.0 | **152.0** ~~154.0~~ | **149.3** ~~154.6~~ | **140.0** ~~145.3~~ | 120.0 | **121.3** ~~164.0~~ | **116.6** ~~148.0~~ | **106.0** ~~154.0~~ | **124.0** ~~174.6~~ | **136.6** ~~147.3~~ |  |
-| **13** | 218.6 | 198.0 | **201.3** ~~211.3~~ | **191.3** ~~210.6~~ | **166.0** ~~204.0~~ | **164.0** ~~203.3~~ | **160.0** ~~220.6~~ | **152.0** ~~214.0~~ | **158.6** ~~240.6~~ | **172.0** ~~224.0~~ | **182.0** ~~274.0~~ |
+| **13** | 218.6 | 198.0 | **201.3** ~~211.3~~ | **191.3** ~~210.6~~ | **166.0** ~~204.0~~ | **164.0** ~~203.3~~ | **160.0** ~~220.6~~ | **152.0** ~~214.0~~ | **154.6** ~~240.6~~ | **168.0** ~~224.0~~ | **166.0** ~~274.0~~ |
 
 ### Every instance
 
@@ -86,9 +86,9 @@ Imbalance values; `x.3` and `x.6` mean x + 1/3 and x + 2/3. The last column link
 | 7 × 13 | 203.3 | 164.0 | −39.3 | 19.3% | **improved** | [k7_n13.txt](results/rectangles/k7_n13.txt) |
 | 8 × 13 | 220.6 | 160.0 | −60.6 | 27.5% | **improved** | [k8_n13.txt](results/rectangles/k8_n13.txt) |
 | 9 × 13 | 214.0 | 152.0 | −62.0 | 29.0% | **improved** | [k9_n13.txt](results/rectangles/k9_n13.txt) |
-| 10 × 13 | 240.6 | 158.6 | −82.0 | 34.1% | **improved** | [k10_n13.txt](results/rectangles/k10_n13.txt) |
-| 11 × 13 | 224.0 | 172.0 | −52.0 | 23.2% | **improved** | [k11_n13.txt](results/rectangles/k11_n13.txt) |
-| 12 × 13 | 274.0 | 182.0 | −92.0 | 33.6% | **improved** | [k12_n13.txt](results/rectangles/k12_n13.txt) |
+| 10 × 13 | 240.6 | 154.6 | −86.0 | 35.7% | **improved** | [k10_n13.txt](results/rectangles/k10_n13.txt) |
+| 11 × 13 | 224.0 | 168.0 | −56.0 | 25.0% | **improved** | [k11_n13.txt](results/rectangles/k11_n13.txt) |
+| 12 × 13 | 274.0 | 166.0 | −108.0 | 39.4% | **improved** | [k12_n13.txt](results/rectangles/k12_n13.txt) |
 
 ### Size of each improvement
 
@@ -100,12 +100,12 @@ Imbalance values; `x.3` and `x.6` mean x + 1/3 and x + 2/3. The last column link
 
 ![Mean reduction vs. time per run](figures/budget.png)
 
-*Mean reduction relative to the previous best over the 32 instances run at all three budgets (k ≥ 4, n ≥ 9). One single-threaded run per budget, each with a different seed. Longer runs widen the margin; the table gives the exact numbers.*
+*Mean reduction relative to the previous best over the 35 instances run at all three budgets (k ≥ 4, n ≥ 9). One single-threaded run per budget, each with a different seed. Longer runs widen the margin; the table gives the exact numbers.*
 
 | time per run | 1 min | 5 min | 10 min |
 |---|---:|---:|---:|
-| mean reduction | 12.4% | 14.4% | 15.3% |
-| instances improved | 29 / 32 | 29 / 32 | 29 / 32 |
+| mean reduction | 13.3% | 15.8% | 16.8% |
+| instances improved | 32 / 35 | 32 / 35 | 32 / 35 |
 
 <!-- RESULTS:END -->
 
