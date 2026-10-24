@@ -60,6 +60,10 @@ for key in {(r['k'], r['n']) for r in m23}:
     v = [float(r['seconds']) for r in m23 if (r['k'], r['n']) == key]
     ref = float([r['reference_seconds'] for r in m23 if (r['k'], r['n']) == key][0])
     ratios.append(ref / max(st.median(v), 1e-3))
+full = [c for c, d in budget.items() if all(t in d for t in (60, 300, 600))]
+bmean = lambda t: 100 * sum((cell[c]['p3'] - budget[c][t]) / cell[c]['p3'] for c in full) / len(full)
+macros.update({'NumBudgetCells': len(full), 'BudgetOneMin': f"{bmean(60):.1f}",
+               'BudgetFiveMin': f"{bmean(300):.1f}", 'BudgetTenMin': f"{bmean(600):.1f}"})
 macros.update({
     'NumTimingRuns': len(beat), 'NumSeeds': len({r['seed'] for r in beat}),
     'AllReached': 'all' if all(r['reached'] == '1' for r in trows) else 'not all',

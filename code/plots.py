@@ -18,15 +18,20 @@ BLUE_RAMP = ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '
 BLUE, NEUTRAL = '#2a78d6', '#b9b8b2'
 
 plt.rcParams.update({
-    'font.family': 'serif', 'mathtext.fontset': 'dejavuserif', 'font.size': 9, 'axes.edgecolor': INK2, 'axes.labelcolor': INK,
+    'font.family': 'serif', 'mathtext.fontset': 'dejavuserif', 'font.size': 8, 'axes.edgecolor': INK2, 'axes.labelcolor': INK,
     'xtick.color': INK2, 'ytick.color': INK2, 'axes.spines.top': False, 'axes.spines.right': False,
-    'figure.facecolor': 'white', 'axes.facecolor': 'white', 'savefig.bbox': 'tight',
+    'figure.facecolor': 'white', 'axes.facecolor': 'white',
 })
 
+PAPER_W = 6.5   # LaTeX text width in inches: paper figures are drawn at their printed size
 
-def save(fig, name):
+
+def save(fig, name, exact=False):
+    """exact=True keeps the figure size as set (for 1:1 placement in the paper);
+    otherwise the canvas is cropped to its contents."""
     for ext in ('pdf', 'png'):
-        fig.savefig(os.path.join(FIG, f'{name}.{ext}'), dpi=200)
+        fig.savefig(os.path.join(FIG, f'{name}.{ext}'), dpi=200,
+                    bbox_inches=None if exact else 'tight')
     plt.close(fig)
 
 
@@ -51,14 +56,14 @@ def contrast(a, b):
     return (la + 0.05) / (lb + 0.05)
 
 
-def heatmap(rows, sub_size=6.5):
+def heatmap(rows, sub_size=6.0):
     """Each cell: new best value, and for improved cells the previous best below it. After
     drawing, every label is measured; if one leaves its cell, the small line is redrawn at a
     smaller size (down to 4.5 pt), and the figure is rejected if it still does not fit."""
     ns = sorted({r['n'] for r in rows}); ks = list(range(2, max(r['k'] for r in rows) + 1))
     cmap = LinearSegmentedColormap.from_list('seq', BLUE_RAMP)
     vmax = max((r['p3'] - r['c3']) / r['p3'] for r in rows if r['c3'] is not None and r['p3'])
-    fig, ax = plt.subplots(figsize=(9.0, 4.6))
+    fig, ax = plt.subplots(figsize=(PAPER_W, 3.5), layout='constrained')
     PAD = 0.04                                       # gap between cells, in cell units
     cells = []                                       # (label artists, cell rectangle)
     for r in rows:
@@ -73,13 +78,13 @@ def heatmap(rows, sub_size=6.5):
         dark = gain > 0 and contrast(face, '#ffffff') > contrast(face, INK)
         main_ink, sub_ink = ('white', 'white') if dark else (INK, INK)
         if gain > 0:
-            t1 = ax.text(x, y + 0.15, r['new'], ha='center', va='center', fontsize=8,
+            t1 = ax.text(x, y + 0.15, r['new'], ha='center', va='center', fontsize=7,
                          color=main_ink, weight='bold')
-            t2 = ax.text(x, y - 0.21, f"was {r['previous']}", ha='center', va='center',
+            t2 = ax.text(x, y - 0.21, r['previous'], ha='center', va='center',
                          fontsize=sub_size, color=sub_ink)
             cells.append(((t1, t2), rect))
         else:
-            t1 = ax.text(x, y, r['new'], ha='center', va='center', fontsize=8, color=INK2)
+            t1 = ax.text(x, y, r['new'], ha='center', va='center', fontsize=7, color=INK2)
             cells.append(((t1,), rect))
     ax.set_xlim(-0.5, len(ks) - 0.5); ax.set_ylim(-0.5, len(ns) - 0.5)
     ax.set_xticks(range(len(ks)), ks); ax.set_yticks(range(len(ns)), ns)
@@ -96,7 +101,7 @@ def heatmap(rows, sub_size=6.5):
     renderer = fig.canvas.get_renderer()
     for texts, rect in cells:
         box = rect.get_window_extent(renderer)
-        mx, my = 0.15 * box.width, 0.08 * box.height   # keep labels well clear of the cell edges
+        mx, my = 0.12 * box.width, 0.08 * box.height   # keep labels well clear of the cell edges
         for t in texts:
             tb = t.get_window_extent(renderer)
             if tb.x0 < box.x0 + mx or tb.x1 > box.x1 - mx or tb.y0 < box.y0 + my or tb.y1 > box.y1 - my:
@@ -104,7 +109,7 @@ def heatmap(rows, sub_size=6.5):
                 if sub_size <= 4.5:
                     raise SystemExit(f"heatmap label '{t.get_text()}' overflows its cell")
                 return heatmap(rows, sub_size - 0.25)
-    save(fig, 'heatmap')
+    save(fig, 'heatmap', exact=True)
     return sub_size
 
 
@@ -229,6 +234,74 @@ def speed_cp2023(g):
     save(fig, 'speed_cp2023')
 
 
+def records_speed(rows, g):
+    """Paper figure: for every improved instance, (a) record vs. new imbalance and
+    (b) CPU time to beat the record (median and range over seeds), sharing one row axis."""
+    import statistics as st
+    imp = sorted([r for r in rows if r['c3'] is not None and r['c3'] < r['p3']],
+                 key=lambda r: (r['n'], r['k']))
+    N = len(imp)
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(PAPER_W, 4.4), sharey=True, layout='constrained',
+                                 gridspec_kw={'width_ratios': [1, 1.15]})
+    floor = 0.01
+    for i, r in enumerate(imp):
+        y = N - 1 - i
+        p, c = r['p3'] / 3, r['c3'] / 3
+        a1.plot([c, p], [y, y], color=GRID, linewidth=2, solid_capstyle='round', zorder=1)
+        a1.scatter([p], [y], s=16, facecolor='white', edgecolor=NEUTRAL, linewidth=1.2, zorder=2)
+        a1.scatter([c], [y], s=18, color=BLUE, edgecolor='white', linewidth=0.8, zorder=3)
+        t = [max(v, floor) for v in g[('beat_cp2025', r['k'], r['n'])]['t']]
+        a2.plot([min(t), max(t)], [y, y], color=GRID, linewidth=2.5, solid_capstyle='round', zorder=1)
+        a2.scatter([st.median(t)], [y], s=18, color=BLUE, edgecolor='white', linewidth=0.8, zorder=3)
+    a1.set_yticks(range(N), [f"{r['k']}×{r['n']}" for r in reversed(imp)], fontsize=6.5)
+    a1.tick_params(axis='y', length=0)
+    a1.set_ylim(-0.7, N - 0.3)
+    a1.set_xlabel('imbalance (lower is better)')
+    a1.set_title('(a) record and new value', fontsize=8, loc='left', color=INK)
+    a1.scatter([], [], s=16, facecolor='white', edgecolor=NEUTRAL, linewidth=1.2, label='record (CP 2025)')
+    a1.scatter([], [], s=18, color=BLUE, label='this work')
+    a1.legend(loc='upper right', frameon=False, fontsize=7, handletextpad=0.3)
+    a2.set_xscale('log'); a2.minorticks_off()
+    a2.set_xlim(floor * 0.7, 4 * 3600 * 2.5)
+    a2.set_xticks([0.01, 0.1, 1, 60, 3600, 4 * 3600], ['10 ms', '0.1 s', '1 s', '1 min', '1 h', '4 h'])
+    for x in (60, 4 * 3600):
+        a2.axvline(x, color=INK2, linewidth=0.7, linestyle=(0, (3, 3)), zorder=0)
+    a2.text(4 * 3600 / 1.2, N - 0.6, 'one CP 2025\nrun (4 h)', fontsize=6.5, color=INK2, ha='right', va='top')
+    a2.set_xlabel('CPU time to beat the record (log scale)')
+    a2.set_title('(b) time to beat the record, 5 seeds', fontsize=8, loc='left', color=INK)
+    a2.tick_params(axis='y', length=0)
+    for ax in (a1, a2):
+        ax.grid(axis='x', color=GRID, linewidth=0.5); ax.set_axisbelow(True)
+    save(fig, 'records_speed', exact=True)
+
+
+def speed_cp2023_paper(g):
+    """Paper version of the CP 2023 comparison, drawn at print size."""
+    import statistics as st
+    rows = sorted([k for k in g if k[0] == 'match_cp2023'], key=lambda t: (t[2], t[1]))
+    fig, ax = plt.subplots(figsize=(PAPER_W, 1.8), layout='constrained')
+    for i, key in enumerate(rows):
+        y = len(rows) - 1 - i
+        ref = float(g[key]['ref'])
+        ours = max(st.median(g[key]['t']), 0.001)
+        ax.plot([ours, ref], [y, y], color=GRID, linewidth=2, zorder=1)
+        ax.scatter([ref], [y], s=18, facecolor='white', edgecolor=NEUTRAL, linewidth=1.2, zorder=2)
+        ax.scatter([ours], [y], s=20, color=BLUE, edgecolor='white', linewidth=0.8, zorder=3)
+        ax.text(ref * 1.7, y, fmt_time(ref), va='center', fontsize=7, color=INK2)
+        ax.text(ours / 1.7, y, fmt_time(ours), va='center', ha='right', fontsize=7, color=INK)
+    ax.set_xscale('log'); ax.set_xlim(0.0003, 2e5); ax.minorticks_off()
+    ax.set_xticks([0.001, 0.1, 10, 600, 36000], ['1 ms', '0.1 s', '10 s', '10 min', '10 h'])
+    ax.set_yticks(range(len(rows)), [f'{k}×{n}' for _, k, n in reversed(rows)])
+    ax.tick_params(axis='y', length=0)
+    ax.set_ylim(-0.6, len(rows) - 0.4)
+    ax.set_xlabel('time to find a rectangle of the same imbalance (log scale)')
+    ax.scatter([], [], s=18, facecolor='white', edgecolor=NEUTRAL, linewidth=1.2, label='SAT, CP 2023 (reported)')
+    ax.scatter([], [], s=20, color=BLUE, label='this work (median of 5 seeds)')
+    fig.legend(loc='outside upper center', frameon=False, fontsize=7, ncol=2)
+    ax.grid(axis='x', color=GRID, linewidth=0.5); ax.set_axisbelow(True)
+    save(fig, 'speed_cp2023_paper', exact=True)
+
+
 if __name__ == '__main__':
     os.makedirs(FIG, exist_ok=True)
     rows = load()
@@ -237,3 +310,4 @@ if __name__ == '__main__':
     g = load_timing()
     if g:
         speed(g); speed_cp2023(g)
+        records_speed(rows, g); speed_cp2023_paper(g)
