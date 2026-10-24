@@ -1,0 +1,4 @@
+# Voboril et al., CP 2025, Fig. 1; reported imbalance 4.0
+1 2 3 4
+2 4 1 3
+3 1 4 2

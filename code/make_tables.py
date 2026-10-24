@@ -3,6 +3,7 @@
 from results/results.csv and results/budget.csv, so the paper never drifts from the data."""
 import csv
 import os
+import statistics as st
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 rows = list(csv.DictReader(open(os.path.join(ROOT, 'results', 'results.csv'))))
@@ -46,6 +47,29 @@ macros = {
     'TopCell': f"${top['k']}\\times{top['n']}$", 'TopOld': top['previous'], 'TopNew': top['new'],
     'NumImprovedOneMin': len(one_min),
 }
+trows = list(csv.DictReader(open(os.path.join(ROOT, 'results', 'timing.csv'))))
+beat = [r for r in trows if r['kind'] == 'beat_cp2025']
+beat_t = [float(r['seconds']) for r in beat]
+per_cell = {}
+for r in beat:
+    per_cell.setdefault((r['k'], r['n']), []).append(float(r['seconds']))
+cell_medians = [st.median(v) for v in per_cell.values()]
+m23 = [r for r in trows if r['kind'] == 'match_cp2023']
+ratios = []
+for key in {(r['k'], r['n']) for r in m23}:
+    v = [float(r['seconds']) for r in m23 if (r['k'], r['n']) == key]
+    ref = float([r['reference_seconds'] for r in m23 if (r['k'], r['n']) == key][0])
+    ratios.append(ref / max(st.median(v), 1e-3))
+macros.update({
+    'NumTimingRuns': len(beat), 'NumSeeds': len({r['seed'] for r in beat}),
+    'AllReached': 'all' if all(r['reached'] == '1' for r in trows) else 'not all',
+    'MedianBeat': f"{st.median(beat_t):.2f}", 'MaxBeat': f"{max(beat_t):.0f}",
+    'NumCellsUnderOneSec': sum(m < 1 for m in cell_medians),
+    'NumCellsUnderOneMin': sum(m < 60 for m in cell_medians),
+    'MaxCellMedian': f"{max(cell_medians):.0f}",
+    'MaxMatch': f"{max(float(r['seconds']) for r in m23):.2f}",
+    'MinSpeedupSAT': f"{min(ratios):,.0f}".replace(',', '{,}'),
+})
 with open(os.path.join(ROOT, 'paper', 'numbers.tex'), 'w') as fh:
     for k, v in macros.items():
         fh.write(f'\\newcommand{{\\{k}}}{{{v}}}\n')

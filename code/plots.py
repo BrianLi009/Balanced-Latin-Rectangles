@@ -151,8 +151,89 @@ def budget(rows):
     return len(cells), dict(zip(secs, mean_gain))
 
 
+def load_timing():
+    path = os.path.join(ROOT, 'results', 'timing.csv')
+    if not os.path.exists(path):
+        return None
+    g = {}
+    for r in csv.DictReader(open(path)):
+        key = (r['kind'], int(r['k']), int(r['n']))
+        g.setdefault(key, {'t': [], 'ref': r['reference_seconds'], 'reached': []})
+        g[key]['reached'].append(int(r['reached']))
+        if r['seconds']:
+            g[key]['t'].append(float(r['seconds']))
+    return g
+
+
+def fmt_time(s):
+    if s < 0.01: return f'{1000 * s:.0f} ms'
+    if s < 1: return f'{s:.2f} s'
+    if s < 60: return f'{s:.0f} s'
+    if s < 3600: return f'{s / 60:.0f} min'
+    return f'{s / 3600:.1f} h'
+
+
+def speed(g):
+    """Time to beat each CP 2025 record: median and range over seeds, log scale."""
+    import statistics as st
+    rows = sorted([k for k in g if k[0] == 'beat_cp2025'], key=lambda t: (t[2], t[1]))
+    fig, ax = plt.subplots(figsize=(6.6, 5.0))
+    floor = 0.01                                     # display floor for log scale (10 ms)
+    for i, key in enumerate(rows):
+        y = len(rows) - 1 - i
+        t = [max(v, floor) for v in g[key]['t']]
+        ax.plot([min(t), max(t)], [y, y], color=GRID, linewidth=3, solid_capstyle='round', zorder=1)
+        ax.scatter([st.median(t)], [y], s=28, color=BLUE, edgecolor='white', linewidth=1.2, zorder=3)
+    for x, label, side in ((60, '1 min', 'left'), (4 * 3600, 'one CP 2025 run:\n4 h per approach,\nper instance', 'right')):
+        ax.axvline(x, color=INK2, linewidth=0.8, linestyle=(0, (3, 3)), zorder=0)
+        ax.text(x * 1.15 if side == 'left' else x / 1.15, len(rows) - 0.6, label, fontsize=7.5,
+                color=INK2, va='top', ha=side)
+    ax.set_xscale('log')
+    ax.set_xlim(floor * 0.7, 4 * 3600 * 5)
+    ticks = [0.01, 0.1, 1, 10, 60, 600, 3600, 4 * 3600]
+    ax.set_xticks(ticks, ['10 ms', '0.1 s', '1 s', '10 s', '1 min', '10 min', '1 h', '4 h'])
+    ax.minorticks_off()
+    ax.set_yticks(range(len(rows)), [f'{k}×{n}' for _, k, n in reversed(rows)], fontsize=6.5)
+    ax.tick_params(axis='y', length=0)
+    ax.set_xlabel('CPU time until the CP 2025 record is beaten (log scale)')
+    ax.grid(axis='x', color=GRID, linewidth=0.6); ax.set_axisbelow(True)
+    ax.set_ylim(-0.8, len(rows) - 0.2)
+    save(fig, 'speed')
+
+
+def speed_cp2023(g):
+    """The four rectangles whose SAT solving time CP 2023 reports, vs. our time to match them."""
+    import statistics as st
+    rows = sorted([k for k in g if k[0] == 'match_cp2023'], key=lambda t: (t[2], t[1]))
+    fig, ax = plt.subplots(figsize=(6.6, 1.9))
+    for i, key in enumerate(rows):
+        y = len(rows) - 1 - i
+        ref = float(g[key]['ref'])
+        ours = max(st.median(g[key]['t']), 0.001)
+        ax.plot([ours, ref], [y, y], color=GRID, linewidth=2, zorder=1)
+        ax.scatter([ref], [y], s=30, facecolor='white', edgecolor=NEUTRAL, linewidth=1.5, zorder=2)
+        ax.scatter([ours], [y], s=32, color=BLUE, edgecolor='white', linewidth=1.2, zorder=3)
+        ax.text(ref * 1.6, y, fmt_time(ref), va='center', fontsize=7.5, color=INK2)
+        ax.text(ours / 1.6, y, fmt_time(ours), va='center', ha='right',
+                fontsize=7.5, color=INK)
+    ax.set_xscale('log'); ax.set_xlim(0.0003, 2e5); ax.minorticks_off()
+    ax.set_xticks([0.001, 0.1, 10, 600, 36000], ['1 ms', '0.1 s', '10 s', '10 min', '10 h'])
+    ax.set_yticks(range(len(rows)), [f'{k}×{n}' for _, k, n in reversed(rows)])
+    ax.tick_params(axis='y', length=0)
+    ax.set_xlabel('time to find a rectangle of the same imbalance (log scale)')
+    ax.scatter([], [], s=30, facecolor='white', edgecolor=NEUTRAL, linewidth=1.5, label='SAT, CP 2023 (reported)')
+    ax.scatter([], [], s=32, color=BLUE, label='this work (median of 5 seeds)')
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.28), ncol=2, frameon=False, fontsize=8)
+    ax.set_ylim(-0.6, len(rows) - 0.4)
+    ax.grid(axis='x', color=GRID, linewidth=0.6); ax.set_axisbelow(True)
+    save(fig, 'speed_cp2023')
+
+
 if __name__ == '__main__':
     os.makedirs(FIG, exist_ok=True)
     rows = load()
     print('heatmap sub-label size:', heatmap(rows)); dumbbell(rows)
     print('budget cells / mean gain:', budget(rows))
+    g = load_timing()
+    if g:
+        speed(g); speed_cp2023(g)

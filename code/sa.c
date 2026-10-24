@@ -4,6 +4,8 @@
 // permutations; repeated symbols in a column are allowed during the search but
 // penalised with an adaptive weight W, and only conflict-free rectangles are kept.
 // Usage: sa k n seconds seed [target3]   -> prints best rectangle (1-based symbols)
+// With target3, the run stops as soon as 3*I(L) <= target3. The CPU time at which the
+// best rectangle was found is printed to stderr as "TIME_TO_BEST <seconds>".
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,6 +66,7 @@ int main(int argc, char **argv) {
     double t0 = (double)clock() / CLOCKS_PER_SEC;
     double Temp0 = 2.0 * k, Temp = Temp0;
     long it = 0, lastimp = 0;
+    double besttime = 0.0;
 
     for (;;) {
         it++;
@@ -109,6 +112,7 @@ int main(int argc, char **argv) {
             cost += dc; vio += dv;
             if (vio == 0 && (bestc < 0 || cost < bestc)) {
                 bestc = cost; lastimp = it;
+                besttime = (double)clock() / CLOCKS_PER_SEC - t0;
                 memcpy(best, L, sizeof L);
                 if (bestc <= target) break;
             }
@@ -125,6 +129,7 @@ int main(int argc, char **argv) {
     long chk = full_cost();
     if (viol() != 0 || chk != bestc) { fprintf(stderr, "VERIFY FAIL %ld %ld\n", chk, bestc); return 2; }
     printf("COST3 %ld\n", bestc);
+    fprintf(stderr, "TIME_TO_BEST %.3f\n", besttime);
     for (int i = 0; i < k; i++) { for (int j = 0; j < n; j++) printf("%d ", L[i][j] + 1); printf("\n"); }
     return 0;
 }

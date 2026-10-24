@@ -27,10 +27,13 @@ that a plain simulated-annealing search with incremental cost updates and an ada
 for column conflicts improves the best known imbalance on \NumImproved{} of the \NumCells{}
 non-square instances with $8\le n\le 13$ studied in the literature, and matches the previous
 value on the remaining \NumMatched{}. The improvements average \MeanGain\% and reach
-\MaxGain\% (\TopCell: \TopOld{} $\to$ \TopNew). A single one-minute run on one laptop core
-already beats the previous record on each of these instances, whereas the previous records came
-from hours of MIP solving per instance. All rectangles, an independent checker, and the search code are public. The
-results are upper bounds: optimality remains open for all improved instances.
+\MaxGain\% (\TopCell: \TopOld{} $\to$ \TopNew). The search is also orders of magnitude
+faster. Over \NumSeeds{} seeds per instance, it beats each previous record after a median of
+\MedianBeat{} CPU seconds on one laptop core, and every run beats it within \MaxBeat{} seconds,
+whereas the previous records came from pipelines that spend at least four hours per instance. It
+matches the four rectangles for which a SAT approach reports solving times of 32 minutes to 5.5
+hours in at most \MaxMatch{} seconds. All rectangles, an independent checker, and the search code
+are public. The results are upper bounds: optimality remains open for all improved instances.
 \end{abstract}
 
 \section{Introduction}
@@ -57,7 +60,8 @@ evaluated in $O(n)$ time, and a penalty for repeated symbols in a column whose w
 during the search, in the spirit of strategic oscillation~\citep{GloverHao2011}. None of these
 ingredients is new. The point of this note is the outcome: on the instances of
 \citet{VoborilRamaswamySzeider2025}, the method improves \NumImproved{} of \NumCells{} best known
-values and is never worse, using minutes of laptop time instead of hours of server time per
+values and is never worse. It is also fast: on a single laptop core it beats each previous
+record within a median of \MedianBeat{} seconds, against pipelines that run for hours per
 instance. We release every rectangle together with an independent checker, so each record can
 be confirmed in seconds without trusting our solver.
 
@@ -129,8 +133,10 @@ cell, so at most 16 CPU-minutes were spent on any instance.
 
 \paragraph{Verification.} Every reported rectangle is checked by an independent Python program
 written from the definition above, which uses exact rational arithmetic and shares no code with
-the solver. The checker reproduces the imbalance of the three worked examples printed
-in~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025} ($6$, $4$ and $84$).
+the solver. To make sure it computes exactly the published quantity, we ran it on all eleven
+rectangles printed in~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025}, including the
+eight CP 2025 records of Figure~6 there (up to $12\times13$). It reproduces every reported
+imbalance exactly.
 
 \paragraph{Results.} Table~\ref{tab:results} and Figure~\ref{fig:heatmap} show the outcome. The
 search improves \NumImproved{} cells, matches \NumMatched{}, and is worse on \NumWorse. All
@@ -139,6 +145,40 @@ of which were already proven optimal~\citep{RamaswamySzeider2023}, together with
 $5\times10$ and $6\times12$. Gains grow with the size of the instance (Figure~\ref{fig:dumbbell}),
 up to \MaxGain\% for \TopCell. The one-minute runs alone already beat the previous record in
 \NumImprovedOneMin{} cells; longer runs mainly widen the margin (Figure~\ref{fig:budget}).
+
+\paragraph{Speed.} To measure speed directly, we ran the search on every improved instance with
+\NumSeeds{} further seeds, each stopping as soon as its imbalance falls below the CP 2025 record,
+with a cap of five CPU minutes (Figure~\ref{fig:speed}). All \NumTimingRuns{} runs beat the record.
+The median time is \MedianBeat{} seconds; the median per instance is below one second in
+\NumCellsUnderOneSec{} of \NumImproved{} instances and below one minute in all of them (at most
+\MaxCellMedian{} seconds, for $9\times10$), and the slowest single run took \MaxBeat{} seconds.
+For comparison, each approach of \citet{VoborilRamaswamySzeider2025} runs for 4 to 9 hours per
+instance, after a 4-hour Gurobi baseline, and they report that their incremental warmstart
+approach is still 25--60\% worse than the baseline after one minute.
+
+\citet{RamaswamySzeider2023} report the SAT solving time for four rectangles that improved the
+records of the time: $3\times10$ (imbalance 84, 32 minutes), $6\times10$ (96, 40 minutes),
+$4\times11$ (118, 102 minutes) and $6\times11$ (124, 5.5 hours). Our search reaches the same
+imbalance within \MaxMatch{} seconds in every run (Figure~\ref{fig:speedsat}), at least
+\MinSpeedupSAT{} times faster by the median.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{../figures/speed.pdf}
+\caption{CPU time until the search beats the CP 2025 record, per instance: median (dot) and
+range (bar) over \NumSeeds{} seeds, one core, log scale. The dashed line at 4 hours marks the
+length of a single run of one CP 2025 approach on one instance.}
+\label{fig:speed}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{../figures/speed_cp2023.pdf}
+\caption{Time to find a rectangle with the imbalance that the SAT approach
+of~\citet{RamaswamySzeider2023} reports, with its reported solving time. Ours: median of
+\NumSeeds{} seeds. Log scale.}
+\label{fig:speedsat}
+\end{figure}
 
 \begin{table}[t]
 \centering
@@ -185,22 +225,28 @@ neighbourhood is natural, and the penalty lets the search cross infeasible state
 suits annealing unusually well, and we do not claim that the comparison carries over to other
 problems.
 
-\paragraph{Compute.} The previous records came from about four hours of Gurobi per instance as a
-baseline, followed by several hours of streamliner generation and evaluation on 10-core
-servers~\citep{VoborilRamaswamySzeider2025}. Our records use at most 16 CPU-minutes per instance
-on a laptop. We did not rerun the MIP pipeline on our hardware, so the comparison is between
-reported results, not a controlled experiment.
+\paragraph{How fair is the speed comparison?} The gap spans four to five orders of magnitude, so
+we state its caveats plainly. First, the hardware differs: the earlier work used Intel Xeon
+E5-2640~v4 servers (2016), and we used an Apple M3 laptop (2023), whose single-core speed is
+higher by a small factor, not by orders of magnitude. Second, CP 2025 does not report when within
+its runs each record was found, so we compare our time to beat a record with the length of their
+runs, not with their time to reach it. Third, the CP 2023 times come from a complete SAT solver on a
+decision encoding; these instances are satisfiable, so the solver had to find a rectangle, the
+same task as ours, but its encoding is built to prove infeasibility as well. Finally, we did not rerun either pipeline ourselves. None
+of these caveats comes close to accounting for the gap.
 
 \paragraph{Limitations.} The new values are upper bounds. We prove nothing about optimality, and
 the size of the improvements suggests that the remaining gap to the optimum may still be large.
-We ran one search per cell and budget, so we report no variance across seeds. Finally, the
+The final records come from one run per cell and budget; only the speed experiment uses
+several seeds. Finally, the
 benchmark stops at $n=13$; larger instances are an obvious next step.
 
 \section{Conclusion}
 
 A short, standard simulated-annealing search improves \NumImproved{} of the \NumCells{}
 best-known imbalance values for balanced Latin rectangles studied in the recent literature, and
-matches the rest. Natural next steps are lower bounds or optimality proofs for the improved
+matches the rest, beating each previous record within seconds on a laptop rather than hours on a
+server. Natural next steps are lower bounds or optimality proofs for the improved
 cells, for instance with the SAT approach of \citet{RamaswamySzeider2023}, larger instances, and
 controlled comparisons with exact and LLM-guided methods on equal hardware.
 

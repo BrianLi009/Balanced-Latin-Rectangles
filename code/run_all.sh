@@ -27,3 +27,5 @@ cells 4 9 | run 600 3
 
 python3 collect.py
 python3 verify.py
+python3 test_checker.py
+python3 timing.py      # about 5 minutes with 8 jobs

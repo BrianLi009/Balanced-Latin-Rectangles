@@ -3,7 +3,9 @@
 A simple simulated-annealing search improves the best known imbalance of **33 of the 51**
 non-square instances (8 ≤ n ≤ 13) from
 [Voboril, Peruvemba Ramaswamy & Szeider, CP 2025](https://doi.org/10.4230/LIPIcs.CP.2025.36),
-and matches the other 18. Every rectangle is included and can be checked independently.
+and matches the other 18. It is also fast: on one laptop core it beats each previous record after a
+median of 0.12 CPU seconds, where the previous records came from pipelines running for hours per instance.
+Every rectangle is included and can be checked independently.
 
 Paper: [`paper/main.pdf`](paper/main.pdf) — *Simple Local Search Sets 33 New Records for Balanced Latin Rectangles*.
 
@@ -12,6 +14,27 @@ Paper: [`paper/main.pdf`](paper/main.pdf) — *Simple Local Search Sets 33 New R
 ## Results
 
 **33 improved, 18 matched, 0 worse** out of 51 instances. Improvements average **18.5%** and reach **39.4%** (12×13: 274.0 → 166.0). Previous values are from Table 1 of CP 2025; all new values are verified by `code/verify.py`.
+
+### Speed
+
+Beyond better values, the search is fast. With 5 seeds per instance, each stopping as soon as it beats the CP 2025 record, the **median time to beat a record is 0.12 s** of CPU time on one laptop core, and **every run beats it within 2.4 min**. The CP 2025 pipeline spends at least 4 hours per instance per approach (after a 4-hour Gurobi baseline), on 10-core servers.
+
+![Time until each CP 2025 record is beaten](figures/speed.png)
+
+*CPU time until the search beats the CP 2025 record: median (dot) and range (bar) over 5 seeds, log scale. The dashed line marks one 4-hour run of one CP 2025 approach.*
+
+The SAT approach of CP 2023 reports solving times for four rectangles. The search reaches the same imbalance in under a tenth of a second:
+
+![Time to match the CP 2023 SAT results](figures/speed_cp2023.png)
+
+| instance | imbalance | SAT, CP 2023 (reported) | this work (median of 5) | this work (slowest) |
+|---|---:|---:|---:|---:|
+| 3 × 10 | 84 | 32 min | 2 ms | 3 ms |
+| 6 × 10 | 96 | 40 min | 0.06 s | 0.07 s |
+| 4 × 11 | 118 | 1.7 h | 0.04 s | 0.04 s |
+| 6 × 11 | 124 | 5.5 h | 0.07 s | 0.07 s |
+
+*Caveats: different hardware (Xeon E5-2640 v4 servers vs. an Apple M3 laptop; the single-core gap is a small factor), CP 2025 does not report when within its runs each record was found, and we did not rerun either pipeline. See the paper for details.*
 
 ### At a glance
 
@@ -36,59 +59,59 @@ Paper: [`paper/main.pdf`](paper/main.pdf) — *Simple Local Search Sets 33 New R
 
 Imbalance values; `x.3` and `x.6` mean x + 1/3 and x + 2/3. The last column links to the rectangle that achieves the new value.
 
-| k × n | previous best | this work | change | reduction | status | rectangle |
-|---|---:|---:|---:|---:|---|---|
-| 2 × 8 | 40.0 | 40.0 | 0 | — | matched | [k2_n8.txt](results/rectangles/k2_n8.txt) |
-| 3 × 8 | 36.0 | 36.0 | 0 | — | matched | [k3_n8.txt](results/rectangles/k3_n8.txt) |
-| 4 × 8 | 32.0 | 32.0 | 0 | — | matched | [k4_n8.txt](results/rectangles/k4_n8.txt) |
-| 5 × 8 | 30.0 | 30.0 | 0 | — | matched | [k5_n8.txt](results/rectangles/k5_n8.txt) |
-| 6 × 8 | 24.0 | 24.0 | 0 | — | matched | [k6_n8.txt](results/rectangles/k6_n8.txt) |
-| 7 × 8 | 28.0 | 28.0 | 0 | — | matched | [k7_n8.txt](results/rectangles/k7_n8.txt) |
-| 2 × 9 | 65.3 | 65.3 | 0 | — | matched | [k2_n9.txt](results/rectangles/k2_n9.txt) |
-| 3 × 9 | 56.0 | 56.0 | 0 | — | matched | [k3_n9.txt](results/rectangles/k3_n9.txt) |
-| 4 × 9 | 56.0 | 53.3 | −2.6 | 4.8% | **improved** | [k4_n9.txt](results/rectangles/k4_n9.txt) |
-| 5 × 9 | 52.6 | 48.6 | −4.0 | 7.6% | **improved** | [k5_n9.txt](results/rectangles/k5_n9.txt) |
-| 6 × 9 | 48.0 | 40.0 | −8.0 | 16.7% | **improved** | [k6_n9.txt](results/rectangles/k6_n9.txt) |
-| 7 × 9 | 51.3 | 43.3 | −8.0 | 15.6% | **improved** | [k7_n9.txt](results/rectangles/k7_n9.txt) |
-| 8 × 9 | 53.3 | 42.6 | −10.6 | 20.0% | **improved** | [k8_n9.txt](results/rectangles/k8_n9.txt) |
-| 2 × 10 | 92.0 | 92.0 | 0 | — | matched | [k2_n10.txt](results/rectangles/k2_n10.txt) |
-| 3 × 10 | 80.0 | 80.0 | 0 | — | matched | [k3_n10.txt](results/rectangles/k3_n10.txt) |
-| 4 × 10 | 78.6 | 78.6 | 0 | — | matched | [k4_n10.txt](results/rectangles/k4_n10.txt) |
-| 5 × 10 | 66.6 | 66.6 | 0 | — | matched | [k5_n10.txt](results/rectangles/k5_n10.txt) |
-| 6 × 10 | 70.0 | 60.0 | −10.0 | 14.3% | **improved** | [k6_n10.txt](results/rectangles/k6_n10.txt) |
-| 7 × 10 | 72.0 | 58.0 | −14.0 | 19.4% | **improved** | [k7_n10.txt](results/rectangles/k7_n10.txt) |
-| 8 × 10 | 82.6 | 58.6 | −24.0 | 29.0% | **improved** | [k8_n10.txt](results/rectangles/k8_n10.txt) |
-| 9 × 10 | 70.0 | 64.0 | −6.0 | 8.6% | **improved** | [k9_n10.txt](results/rectangles/k9_n10.txt) |
-| 2 × 11 | 124.0 | 124.0 | 0 | — | matched | [k2_n11.txt](results/rectangles/k2_n11.txt) |
-| 3 × 11 | 114.0 | 114.0 | 0 | — | matched | [k3_n11.txt](results/rectangles/k3_n11.txt) |
-| 4 × 11 | 112.0 | 104.0 | −8.0 | 7.1% | **improved** | [k4_n11.txt](results/rectangles/k4_n11.txt) |
-| 5 × 11 | 116.0 | 94.0 | −22.0 | 19.0% | **improved** | [k5_n11.txt](results/rectangles/k5_n11.txt) |
-| 6 × 11 | 108.0 | 88.0 | −20.0 | 18.5% | **improved** | [k6_n11.txt](results/rectangles/k6_n11.txt) |
-| 7 × 11 | 118.0 | 84.0 | −34.0 | 28.8% | **improved** | [k7_n11.txt](results/rectangles/k7_n11.txt) |
-| 8 × 11 | 114.0 | 78.0 | −36.0 | 31.6% | **improved** | [k8_n11.txt](results/rectangles/k8_n11.txt) |
-| 9 × 11 | 120.0 | 84.0 | −36.0 | 30.0% | **improved** | [k9_n11.txt](results/rectangles/k9_n11.txt) |
-| 10 × 11 | 110.0 | 100.0 | −10.0 | 9.1% | **improved** | [k10_n11.txt](results/rectangles/k10_n11.txt) |
-| 2 × 12 | 168.0 | 168.0 | 0 | — | matched | [k2_n12.txt](results/rectangles/k2_n12.txt) |
-| 3 × 12 | 154.0 | 152.0 | −2.0 | 1.3% | **improved** | [k3_n12.txt](results/rectangles/k3_n12.txt) |
-| 4 × 12 | 154.6 | 149.3 | −5.3 | 3.4% | **improved** | [k4_n12.txt](results/rectangles/k4_n12.txt) |
-| 5 × 12 | 145.3 | 140.0 | −5.3 | 3.7% | **improved** | [k5_n12.txt](results/rectangles/k5_n12.txt) |
-| 6 × 12 | 120.0 | 120.0 | 0 | — | matched | [k6_n12.txt](results/rectangles/k6_n12.txt) |
-| 7 × 12 | 164.0 | 121.3 | −42.6 | 26.0% | **improved** | [k7_n12.txt](results/rectangles/k7_n12.txt) |
-| 8 × 12 | 148.0 | 116.6 | −31.3 | 21.2% | **improved** | [k8_n12.txt](results/rectangles/k8_n12.txt) |
-| 9 × 12 | 154.0 | 106.0 | −48.0 | 31.2% | **improved** | [k9_n12.txt](results/rectangles/k9_n12.txt) |
-| 10 × 12 | 174.6 | 124.0 | −50.6 | 29.0% | **improved** | [k10_n12.txt](results/rectangles/k10_n12.txt) |
-| 11 × 12 | 147.3 | 136.6 | −10.6 | 7.2% | **improved** | [k11_n12.txt](results/rectangles/k11_n12.txt) |
-| 2 × 13 | 218.6 | 218.6 | 0 | — | matched | [k2_n13.txt](results/rectangles/k2_n13.txt) |
-| 3 × 13 | 198.0 | 198.0 | 0 | — | matched | [k3_n13.txt](results/rectangles/k3_n13.txt) |
-| 4 × 13 | 211.3 | 201.3 | −10.0 | 4.7% | **improved** | [k4_n13.txt](results/rectangles/k4_n13.txt) |
-| 5 × 13 | 210.6 | 191.3 | −19.3 | 9.2% | **improved** | [k5_n13.txt](results/rectangles/k5_n13.txt) |
-| 6 × 13 | 204.0 | 166.0 | −38.0 | 18.6% | **improved** | [k6_n13.txt](results/rectangles/k6_n13.txt) |
-| 7 × 13 | 203.3 | 164.0 | −39.3 | 19.3% | **improved** | [k7_n13.txt](results/rectangles/k7_n13.txt) |
-| 8 × 13 | 220.6 | 160.0 | −60.6 | 27.5% | **improved** | [k8_n13.txt](results/rectangles/k8_n13.txt) |
-| 9 × 13 | 214.0 | 152.0 | −62.0 | 29.0% | **improved** | [k9_n13.txt](results/rectangles/k9_n13.txt) |
-| 10 × 13 | 240.6 | 154.6 | −86.0 | 35.7% | **improved** | [k10_n13.txt](results/rectangles/k10_n13.txt) |
-| 11 × 13 | 224.0 | 168.0 | −56.0 | 25.0% | **improved** | [k11_n13.txt](results/rectangles/k11_n13.txt) |
-| 12 × 13 | 274.0 | 166.0 | −108.0 | 39.4% | **improved** | [k12_n13.txt](results/rectangles/k12_n13.txt) |
+| k × n | previous best | this work | change | reduction | time to beat (median of 5) | status | rectangle |
+|---|---:|---:|---:|---:|---:|---|---|
+| 2 × 8 | 40.0 | 40.0 | 0 | — | — | matched | [k2_n8.txt](results/rectangles/k2_n8.txt) |
+| 3 × 8 | 36.0 | 36.0 | 0 | — | — | matched | [k3_n8.txt](results/rectangles/k3_n8.txt) |
+| 4 × 8 | 32.0 | 32.0 | 0 | — | — | matched | [k4_n8.txt](results/rectangles/k4_n8.txt) |
+| 5 × 8 | 30.0 | 30.0 | 0 | — | — | matched | [k5_n8.txt](results/rectangles/k5_n8.txt) |
+| 6 × 8 | 24.0 | 24.0 | 0 | — | — | matched | [k6_n8.txt](results/rectangles/k6_n8.txt) |
+| 7 × 8 | 28.0 | 28.0 | 0 | — | — | matched | [k7_n8.txt](results/rectangles/k7_n8.txt) |
+| 2 × 9 | 65.3 | 65.3 | 0 | — | — | matched | [k2_n9.txt](results/rectangles/k2_n9.txt) |
+| 3 × 9 | 56.0 | 56.0 | 0 | — | — | matched | [k3_n9.txt](results/rectangles/k3_n9.txt) |
+| 4 × 9 | 56.0 | 53.3 | −2.6 | 4.8% | 0.07 s | **improved** | [k4_n9.txt](results/rectangles/k4_n9.txt) |
+| 5 × 9 | 52.6 | 48.6 | −4.0 | 7.6% | 0.10 s | **improved** | [k5_n9.txt](results/rectangles/k5_n9.txt) |
+| 6 × 9 | 48.0 | 40.0 | −8.0 | 16.7% | 3.62 s | **improved** | [k6_n9.txt](results/rectangles/k6_n9.txt) |
+| 7 × 9 | 51.3 | 43.3 | −8.0 | 15.6% | 5.13 s | **improved** | [k7_n9.txt](results/rectangles/k7_n9.txt) |
+| 8 × 9 | 53.3 | 42.6 | −10.6 | 20.0% | 8.87 s | **improved** | [k8_n9.txt](results/rectangles/k8_n9.txt) |
+| 2 × 10 | 92.0 | 92.0 | 0 | — | — | matched | [k2_n10.txt](results/rectangles/k2_n10.txt) |
+| 3 × 10 | 80.0 | 80.0 | 0 | — | — | matched | [k3_n10.txt](results/rectangles/k3_n10.txt) |
+| 4 × 10 | 78.6 | 78.6 | 0 | — | — | matched | [k4_n10.txt](results/rectangles/k4_n10.txt) |
+| 5 × 10 | 66.6 | 66.6 | 0 | — | — | matched | [k5_n10.txt](results/rectangles/k5_n10.txt) |
+| 6 × 10 | 70.0 | 60.0 | −10.0 | 14.3% | 0.10 s | **improved** | [k6_n10.txt](results/rectangles/k6_n10.txt) |
+| 7 × 10 | 72.0 | 58.0 | −14.0 | 19.4% | 0.13 s | **improved** | [k7_n10.txt](results/rectangles/k7_n10.txt) |
+| 8 × 10 | 82.6 | 58.6 | −24.0 | 29.0% | 0.12 s | **improved** | [k8_n10.txt](results/rectangles/k8_n10.txt) |
+| 9 × 10 | 70.0 | 64.0 | −6.0 | 8.6% | 54 s | **improved** | [k9_n10.txt](results/rectangles/k9_n10.txt) |
+| 2 × 11 | 124.0 | 124.0 | 0 | — | — | matched | [k2_n11.txt](results/rectangles/k2_n11.txt) |
+| 3 × 11 | 114.0 | 114.0 | 0 | — | — | matched | [k3_n11.txt](results/rectangles/k3_n11.txt) |
+| 4 × 11 | 112.0 | 104.0 | −8.0 | 7.1% | 0.08 s | **improved** | [k4_n11.txt](results/rectangles/k4_n11.txt) |
+| 5 × 11 | 116.0 | 94.0 | −22.0 | 19.0% | 0.06 s | **improved** | [k5_n11.txt](results/rectangles/k5_n11.txt) |
+| 6 × 11 | 108.0 | 88.0 | −20.0 | 18.5% | 0.07 s | **improved** | [k6_n11.txt](results/rectangles/k6_n11.txt) |
+| 7 × 11 | 118.0 | 84.0 | −34.0 | 28.8% | 0.08 s | **improved** | [k7_n11.txt](results/rectangles/k7_n11.txt) |
+| 8 × 11 | 114.0 | 78.0 | −36.0 | 31.6% | 0.12 s | **improved** | [k8_n11.txt](results/rectangles/k8_n11.txt) |
+| 9 × 11 | 120.0 | 84.0 | −36.0 | 30.0% | 0.96 s | **improved** | [k9_n11.txt](results/rectangles/k9_n11.txt) |
+| 10 × 11 | 110.0 | 100.0 | −10.0 | 9.1% | 14 s | **improved** | [k10_n11.txt](results/rectangles/k10_n11.txt) |
+| 2 × 12 | 168.0 | 168.0 | 0 | — | — | matched | [k2_n12.txt](results/rectangles/k2_n12.txt) |
+| 3 × 12 | 154.0 | 152.0 | −2.0 | 1.3% | 2.11 s | **improved** | [k3_n12.txt](results/rectangles/k3_n12.txt) |
+| 4 × 12 | 154.6 | 149.3 | −5.3 | 3.4% | 2.13 s | **improved** | [k4_n12.txt](results/rectangles/k4_n12.txt) |
+| 5 × 12 | 145.3 | 140.0 | −5.3 | 3.7% | 30 s | **improved** | [k5_n12.txt](results/rectangles/k5_n12.txt) |
+| 6 × 12 | 120.0 | 120.0 | 0 | — | — | matched | [k6_n12.txt](results/rectangles/k6_n12.txt) |
+| 7 × 12 | 164.0 | 121.3 | −42.6 | 26.0% | 0.09 s | **improved** | [k7_n12.txt](results/rectangles/k7_n12.txt) |
+| 8 × 12 | 148.0 | 116.6 | −31.3 | 21.2% | 0.11 s | **improved** | [k8_n12.txt](results/rectangles/k8_n12.txt) |
+| 9 × 12 | 154.0 | 106.0 | −48.0 | 31.2% | 0.13 s | **improved** | [k9_n12.txt](results/rectangles/k9_n12.txt) |
+| 10 × 12 | 174.6 | 124.0 | −50.6 | 29.0% | 0.15 s | **improved** | [k10_n12.txt](results/rectangles/k10_n12.txt) |
+| 11 × 12 | 147.3 | 136.6 | −10.6 | 7.2% | 7.24 s | **improved** | [k11_n12.txt](results/rectangles/k11_n12.txt) |
+| 2 × 13 | 218.6 | 218.6 | 0 | — | — | matched | [k2_n13.txt](results/rectangles/k2_n13.txt) |
+| 3 × 13 | 198.0 | 198.0 | 0 | — | — | matched | [k3_n13.txt](results/rectangles/k3_n13.txt) |
+| 4 × 13 | 211.3 | 201.3 | −10.0 | 4.7% | 0.05 s | **improved** | [k4_n13.txt](results/rectangles/k4_n13.txt) |
+| 5 × 13 | 210.6 | 191.3 | −19.3 | 9.2% | 0.08 s | **improved** | [k5_n13.txt](results/rectangles/k5_n13.txt) |
+| 6 × 13 | 204.0 | 166.0 | −38.0 | 18.6% | 0.08 s | **improved** | [k6_n13.txt](results/rectangles/k6_n13.txt) |
+| 7 × 13 | 203.3 | 164.0 | −39.3 | 19.3% | 0.10 s | **improved** | [k7_n13.txt](results/rectangles/k7_n13.txt) |
+| 8 × 13 | 220.6 | 160.0 | −60.6 | 27.5% | 0.10 s | **improved** | [k8_n13.txt](results/rectangles/k8_n13.txt) |
+| 9 × 13 | 214.0 | 152.0 | −62.0 | 29.0% | 0.12 s | **improved** | [k9_n13.txt](results/rectangles/k9_n13.txt) |
+| 10 × 13 | 240.6 | 154.6 | −86.0 | 35.7% | 0.37 s | **improved** | [k10_n13.txt](results/rectangles/k10_n13.txt) |
+| 11 × 13 | 224.0 | 168.0 | −56.0 | 25.0% | 0.16 s | **improved** | [k11_n13.txt](results/rectangles/k11_n13.txt) |
+| 12 × 13 | 274.0 | 166.0 | −108.0 | 39.4% | 1.94 s | **improved** | [k12_n13.txt](results/rectangles/k12_n13.txt) |
 
 ### Size of each improvement
 
@@ -134,8 +157,12 @@ Values like `158.6` mean 158 + 2/3, and `.3` means + 1/3, as in the literature.
 | `results/budget.csv` | Best value per cell for each time budget |
 | `results/raw/` | Raw solver output of every run |
 | `data/previous_best.csv` | Baseline: CP 2025, Table 1 |
+| `data/published/` | The 11 rectangles printed in CP 2023 and CP 2025, with their reported imbalance |
+| `results/timing.csv` | Time-to-target runs (5 seeds per instance) |
 | `code/sa.c` | The search (simulated annealing, about 130 lines of C) |
 | `code/verify.py` | Independent checker |
+| `code/test_checker.py` | Confirms the checker reproduces all 11 published rectangles' reported values |
+| `code/timing.py` | Speed experiment: time to beat CP 2025 records and to match CP 2023 results |
 | `code/collect.py` | Verifies all raw runs and builds `results/` |
 | `code/plots.py`, `code/make_tables.py`, `code/make_readme.py` | Figures, the paper's table and numbers, and this README's results section |
 | `code/run_all.sh` | Reproduces every run (about 1.5 hours on 8 cores) |
@@ -145,7 +172,7 @@ Values like `158.6` mean 158 + 2/3, and `.3` means + 1/3, as in the literature.
 
 ```sh
 cd code
-./run_all.sh                 # build, run all budgets, collect, verify
+./run_all.sh                 # build, run all budgets, collect, verify, time-to-target
 python3 plots.py             # figures (needs matplotlib)
 python3 make_tables.py       # paper/table.tex and paper/numbers.tex
 python3 make_readme.py       # results section of this README
