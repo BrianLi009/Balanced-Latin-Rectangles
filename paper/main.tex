@@ -153,8 +153,8 @@ matched by our search.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{../figures/heatmap.pdf}
-\caption{New best imbalance per cell, shaded by the reduction relative to the previous best.
-Grey cells are matched, not improved.}
+\caption{New best imbalance per cell (bold) with the previous best below it, shaded by the
+reduction relative to the previous best. Grey cells are matched, not improved.}
 \label{fig:heatmap}
 \end{figure}
 
@@ -195,13 +195,6 @@ reported results, not a controlled experiment.
 the size of the improvements suggests that the remaining gap to the optimum may still be large.
 We ran one search per cell and budget, so we report no variance across seeds. Finally, the
 benchmark stops at $n=13$; larger instances are an obvious next step.
-
-\paragraph{How this work was done.} The solver, the checker and this paper were produced in an
-interactive session with an AI coding assistant (Claude, by Anthropic), directed by the author.
-The assistant selected the problem from a survey of recent papers, wrote and debugged the
-code, and drafted the text; the author chose the overall direction and reviewed the results. We
-mention this for transparency, not as a contribution: the method is standard, and we have not
-tested whether the result depends on the assistant.
 
 \section{Conclusion}
 

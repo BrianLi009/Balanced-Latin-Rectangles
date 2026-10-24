@@ -18,7 +18,7 @@ BLUE_RAMP = ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '
 BLUE, NEUTRAL = '#2a78d6', '#b9b8b2'
 
 plt.rcParams.update({
-    'font.family': 'serif', 'font.size': 9, 'axes.edgecolor': INK2, 'axes.labelcolor': INK,
+    'font.family': 'serif', 'mathtext.fontset': 'dejavuserif', 'font.size': 9, 'axes.edgecolor': INK2, 'axes.labelcolor': INK,
     'xtick.color': INK2, 'ytick.color': INK2, 'axes.spines.top': False, 'axes.spines.right': False,
     'figure.facecolor': 'white', 'axes.facecolor': 'white', 'savefig.bbox': 'tight',
 })
@@ -39,37 +39,73 @@ def load():
     return rows
 
 
-def heatmap(rows):
+def _lum(c):
+    r, g, b = matplotlib.colors.to_rgb(c)
+    f = lambda v: v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+
+def contrast(a, b):
+    """WCAG contrast ratio between two colours."""
+    la, lb = sorted((_lum(a), _lum(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def heatmap(rows, sub_size=6.5):
+    """Each cell: new best value, and for improved cells the previous best below it. After
+    drawing, every label is measured; if one leaves its cell, the small line is redrawn at a
+    smaller size (down to 4.5 pt), and the figure is rejected if it still does not fit."""
     ns = sorted({r['n'] for r in rows}); ks = list(range(2, max(r['k'] for r in rows) + 1))
     cmap = LinearSegmentedColormap.from_list('seq', BLUE_RAMP)
     vmax = max((r['p3'] - r['c3']) / r['p3'] for r in rows if r['c3'] is not None and r['p3'])
-    fig, ax = plt.subplots(figsize=(6.6, 3.3))
+    fig, ax = plt.subplots(figsize=(9.0, 4.6))
+    PAD = 0.04                                       # gap between cells, in cell units
+    cells = []                                       # (label artists, cell rectangle)
     for r in rows:
-        x, y = ks.index(r['k']), ns.index(r['n'])
         if r['c3'] is None:
             continue
+        x, y = ks.index(r['k']), ns.index(r['n'])
         gain = (r['p3'] - r['c3']) / r['p3'] if r['p3'] else 0.0
         face = cmap(gain / vmax) if gain > 0 else '#f0efec'
-        ax.add_patch(plt.Rectangle((x - 0.5 + 0.03, y - 0.5 + 0.03), 0.94, 0.94, facecolor=face,
-                                   edgecolor='white', linewidth=1.0))
-        dark = gain / vmax > 0.55
-        ink = 'white' if dark else INK
+        rect = plt.Rectangle((x - 0.5 + PAD, y - 0.5 + PAD), 1 - 2 * PAD, 1 - 2 * PAD,
+                             facecolor=face, edgecolor='none')
+        ax.add_patch(rect)
+        dark = gain > 0 and contrast(face, '#ffffff') > contrast(face, INK)
+        main_ink, sub_ink = ('white', 'white') if dark else (INK, INK)
         if gain > 0:
-            ax.text(x, y + 0.14, r['new'], ha='center', va='center', fontsize=7.2, color=ink, weight='bold')
-            ax.text(x, y - 0.20, f"was {r['previous']}", ha='center', va='center', fontsize=5.4,
-                    color='white' if dark else INK2)
+            t1 = ax.text(x, y + 0.15, r['new'], ha='center', va='center', fontsize=8,
+                         color=main_ink, weight='bold')
+            t2 = ax.text(x, y - 0.21, f"was {r['previous']}", ha='center', va='center',
+                         fontsize=sub_size, color=sub_ink)
+            cells.append(((t1, t2), rect))
         else:
-            ax.text(x, y, r['new'], ha='center', va='center', fontsize=7.2, color=INK2)
+            t1 = ax.text(x, y, r['new'], ha='center', va='center', fontsize=8, color=INK2)
+            cells.append(((t1,), rect))
     ax.set_xlim(-0.5, len(ks) - 0.5); ax.set_ylim(-0.5, len(ns) - 0.5)
     ax.set_xticks(range(len(ks)), ks); ax.set_yticks(range(len(ns)), ns)
-    ax.set_xlabel('rows $k$'); ax.set_ylabel('columns / symbols $n$')
+    ax.set_xlabel('rows $k$'); ax.set_ylabel('symbols $n$')
     ax.tick_params(length=0)
     for s in ax.spines.values(): s.set_visible(False)
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, 100 * vmax))
-    cb = fig.colorbar(sm, ax=ax, fraction=0.035, pad=0.02)
-    cb.set_label('reduction vs. previous best (%)', color=INK2); cb.outline.set_visible(False)
+    cb = fig.colorbar(sm, ax=ax, fraction=0.03, pad=0.015, format='%d%%')
+    cb.set_label('reduction vs. previous best', color=INK2); cb.outline.set_visible(False)
     cb.ax.tick_params(colors=INK2, length=0)
+
+    # Overflow check: every label must sit inside its cell with a small margin.
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    for texts, rect in cells:
+        box = rect.get_window_extent(renderer)
+        mx, my = 0.15 * box.width, 0.08 * box.height   # keep labels well clear of the cell edges
+        for t in texts:
+            tb = t.get_window_extent(renderer)
+            if tb.x0 < box.x0 + mx or tb.x1 > box.x1 - mx or tb.y0 < box.y0 + my or tb.y1 > box.y1 - my:
+                plt.close(fig)
+                if sub_size <= 4.5:
+                    raise SystemExit(f"heatmap label '{t.get_text()}' overflows its cell")
+                return heatmap(rows, sub_size - 0.25)
     save(fig, 'heatmap')
+    return sub_size
 
 
 def dumbbell(rows):
@@ -118,5 +154,5 @@ def budget(rows):
 if __name__ == '__main__':
     os.makedirs(FIG, exist_ok=True)
     rows = load()
-    heatmap(rows); dumbbell(rows)
+    print('heatmap sub-label size:', heatmap(rows)); dumbbell(rows)
     print('budget cells / mean gain:', budget(rows))
