@@ -188,3 +188,15 @@ so a rerun will not reproduce the exact rectangles, but it should give values of
 - The new values are **upper bounds**. Optimality is open for every improved instance.
 - One run per cell and time budget. No variance across seeds is reported.
 - The comparison with CP 2025 uses their reported results. We did not rerun their pipeline.
+
+## How to cite
+
+Zhengyu Li and Vijay Ganesh. *Balanced Latin Rectangles: New Best-Known Values via Simple Local Search.*
+2026. https://github.com/BrianLi009/Balanced-Latin-Rectangles
+
+GitHub's "Cite this repository" button gives this in BibTeX and APA format (from `CITATION.cff`).
+
+## License
+
+- Code (`code/`): [MIT](LICENSE).
+- Data, results, figures and paper (`data/`, `results/`, `figures/`, `paper/`): [CC BY 4.0](LICENSE-data).

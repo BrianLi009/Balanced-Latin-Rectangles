@@ -1,0 +1,53 @@
+cff-version: 1.2.0
+message: "If you use these rectangles or this code, please cite them as below."
+title: "Balanced Latin Rectangles: New Best-Known Values via Simple Local Search"
+version: 1.0.0
+date-released: 2026-10-24
+authors:
+  - family-names: Li
+    given-names: Zhengyu
+    affiliation: Georgia Institute of Technology
+    orcid: "https://orcid.org/0000-0003-0252-8549"
+  - family-names: Ganesh
+    given-names: Vijay
+    affiliation: Georgia Institute of Technology
+    orcid: "https://orcid.org/0000-0002-6029-2047"
+repository-code: "https://github.com/BrianLi009/Balanced-Latin-Rectangles"
+license:
+  - MIT
+  - CC-BY-4.0
+abstract: >-
+  Rectangles, solver, checker and paper for new best-known values of the balanced
+  Latin rectangle problem. A simple simulated-annealing search improves 33 of the 51
+  non-square instances (8 <= n <= 13) from Voboril, Peruvemba Ramaswamy and Szeider
+  (CP 2025) and matches the other 18, beating each previous record after a median of
+  0.12 CPU seconds on one laptop core. Every rectangle can be checked with an
+  independent exact-arithmetic checker.
+keywords:
+  - Latin rectangles
+  - spatially balanced Latin squares
+  - combinatorial design
+  - local search
+  - simulated annealing
+  - constraint programming
+references:
+  - type: conference-paper
+    title: "Balancing Latin Rectangles with LLM-Generated Streamliners"
+    authors:
+      - family-names: Voboril
+        given-names: Florentina
+      - family-names: Peruvemba Ramaswamy
+        given-names: Vaidyanathan
+      - family-names: Szeider
+        given-names: Stefan
+    year: 2025
+    doi: 10.4230/LIPIcs.CP.2025.36
+  - type: conference-paper
+    title: "Proven Optimally-Balanced Latin Rectangles with SAT"
+    authors:
+      - family-names: Peruvemba Ramaswamy
+        given-names: Vaidyanathan
+      - family-names: Szeider
+        given-names: Stefan
+    year: 2023
+    doi: 10.4230/LIPIcs.CP.2023.48
