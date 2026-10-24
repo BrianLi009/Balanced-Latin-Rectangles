@@ -1,5 +1,5 @@
 {
-  "title": "Balanced Latin Rectangles: New Best-Known Values via Simple Local Search",
+  "title": "Balanced Latin Rectangles: Improved Published Upper Bounds via Simple Local Search",
   "upload_type": "dataset",
   "version": "1.0.0",
   "creators": [
@@ -14,7 +14,7 @@
       "orcid": "0000-0002-6029-2047"
     }
   ],
-  "description": "<p>Best-known values for the balanced Latin rectangle problem (minimum imbalance of k&times;n Latin rectangles). A simple simulated-annealing search improves 33 of the 51 non-square instances with 8 &le; n &le; 13 from Voboril, Peruvemba Ramaswamy and Szeider (CP 2025) and matches the other 18. It beats each previous record after a median of 0.12 CPU seconds on one laptop core, and matches the four SAT results with reported solving times (32 minutes to 5.5 hours) from Peruvemba Ramaswamy and Szeider (CP 2023) in at most 0.07 seconds.</p><p>Contents: every best rectangle (results/rectangles), previous and new values (results/results.csv), raw solver output, timing runs, an independent exact-arithmetic checker that reproduces all eleven rectangles printed in the two prior papers, the C solver, scripts that reproduce every run, figures, and the LaTeX source and PDF of the accompanying paper.</p><p>The new values are upper bounds; optimality remains open for every improved instance.</p><p>Licenses: code (code/) under MIT; data, figures and paper under CC BY 4.0.</p>",
+  "description": "<p>Verified upper bounds for the 51 non-square instances in CP 2025 Table 1: 33 improved, 18 matched. Mean reduction over improved instances: 18.5%. Final values use up to 16 allocated CPU minutes per instance. Separate historical first-improvement measurements have a pooled median of 0.12 CPU seconds over 165 runs on the 33 improved instances. These are not controlled cross-study speedups.</p><p>Includes rectangles, raw quality-run output, historical timing CSV, exact checker, 14 published example fixtures, solver, reproducibility scripts, figures, and LaTeX/PDF. Historical timing-run stdout, stderr and build provenance are unavailable; the revised runner archives these for future runs. Improved values are upper bounds, not optimality certificates.</p><p>Code: MIT. Data, figures and paper: CC BY 4.0.</p>",
   "license": "cc-by-4.0",
   "keywords": [
     "Latin rectangles",

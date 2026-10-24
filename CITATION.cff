@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use these rectangles or this code, please cite them as below."
-title: "Balanced Latin Rectangles: New Best-Known Values via Simple Local Search"
+title: "Balanced Latin Rectangles: Improved Published Upper Bounds via Simple Local Search"
 version: 1.0.0
 date-released: 2026-10-24
 authors:
@@ -17,12 +17,13 @@ license:
   - MIT
   - CC-BY-4.0
 abstract: >-
-  Rectangles, solver, checker and paper for new best-known values of the balanced
-  Latin rectangle problem. A simple simulated-annealing search improves 33 of the 51
-  non-square instances (8 <= n <= 13) from Voboril, Peruvemba Ramaswamy and Szeider
-  (CP 2025) and matches the other 18, beating each previous record after a median of
-  0.12 CPU seconds on one laptop core. Every rectangle can be checked with an
-  independent exact-arithmetic checker.
+  Rectangles, solver, checker and paper for 33 improved upper bounds relative to
+  the 51 non-square instances in CP 2025 Table 1, with the other 18 matched.
+  The mean reduction over improved instances is 18.5%. Final values use up to
+  16 allocated CPU minutes per instance. A separate historical experiment has
+  a pooled median first-improvement time of 0.12 CPU seconds across 165 runs
+  on the 33 improved instances. This is not a controlled cross-study speedup.
+  Every rectangle is independently checked with exact arithmetic.
 keywords:
   - Latin rectangles
   - spatially balanced Latin squares

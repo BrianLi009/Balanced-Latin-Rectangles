@@ -4,7 +4,11 @@ results/results.csv and results/budget.csv, so the README never drifts from the 
 import csv
 import os
 
+from timing import load_timing_results
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Refuse incomplete/censored timing data before writing any publication artifacts.
+VERIFIED_TIMING = load_timing_results()
 START, END = '<!-- RESULTS:START -->', '<!-- RESULTS:END -->'
 
 rows = list(csv.DictReader(open(os.path.join(ROOT, 'results', 'results.csv'))))
@@ -31,7 +35,7 @@ full = [c for c, d in budget.items() if all(s in d for s in secs)]
 
 import statistics as st
 timing = {}
-for t in csv.DictReader(open(os.path.join(ROOT, 'results', 'timing.csv'))):
+for t in VERIFIED_TIMING:
     timing.setdefault((t['kind'], int(t['k']), int(t['n'])), []).append(t)
 
 
@@ -61,19 +65,20 @@ SEEDS = sorted({t['seed'] for key in timing if key[0] == 'beat_cp2025' for t in 
 
 out = [START, '', '## Results', '',
        f"**{len(imp)} improved, {len(mat)} matched, {len(wor)} worse** out of {len(rows)} instances. "
-       f"Improvements average **{sum(map(gain, imp)) / len(imp):.1f}%** and reach "
+       f"Across the improved instances, reductions average **{sum(map(gain, imp)) / len(imp):.1f}%** and reach "
        f"**{gain(top):.1f}%** ({top['k']}×{top['n']}: {top['previous']} → {top['new']}). "
        "Previous values are from Table 1 of CP 2025; all new values are verified by `code/verify.py`.", '',
-       '### Speed', '',
-       f"Beyond better values, the search is fast. With {len(SEEDS)} seeds per instance, each stopping as soon as it "
-       f"beats the CP 2025 record, the **median time to beat a record is {fmt_s(st.median(ALLBEAT))}** of CPU time on "
+       '### First-improvement timing', '',
+       'These times do not measure attainment of the final table values, which use up to 16 allocated CPU minutes per instance. Cross-study times are not controlled speedups.', '',
+       f"In the historical first-improvement experiment on the 33 improved instances, with {len(SEEDS)} seeds per instance, each stopping as soon as it "
+       f"beats the CP 2025 record, the **pooled median over all 165 runs is {fmt_s(st.median(ALLBEAT))}** of CPU time on "
        f"one laptop core, and **every run beats it within {fmt_s(max(ALLBEAT))}**. The CP 2025 pipeline spends at least "
        "4 hours per instance per approach (after a 4-hour Gurobi baseline), on 10-core servers.", '',
        '![Time until each CP 2025 record is beaten](figures/speed.png)', '',
        '*CPU time until the search beats the CP 2025 record: median (dot) and range (bar) over 5 seeds, '
-       'log scale. The dashed line marks one 4-hour run of one CP 2025 approach.*', '',
+       'log scale. The dashed line marks a CP 2025 four-hour budget, not time to the reference quality.*', '',
        'The SAT approach of CP 2023 reports solving times for four rectangles. '
-       'The search reaches the same imbalance in under a tenth of a second:', '',
+       'The search reaches or improves the target imbalance in under a tenth of a second:', '',
        '![Time to match the CP 2023 SAT results](figures/speed_cp2023.png)', '',
        '| instance | imbalance | SAT, CP 2023 (reported) | this work (median of 5) | this work (slowest) |',
        '|---|---:|---:|---:|---:|'] + [
@@ -81,8 +86,8 @@ out = [START, '', '## Results', '',
        f"{fmt_ref(float(timing[(kind, k, n)][0]['reference_seconds']))} | "
        f"{fmt_s(st.median(tsec((kind, k, n))))} | {fmt_s(max(tsec((kind, k, n))))} |"
        for (kind, k, n) in sorted([x for x in timing if x[0] == 'match_cp2023'], key=lambda t: (t[2], t[1]))] + [
-       '', '*Caveats: different hardware (Xeon E5-2640 v4 servers vs. an Apple M3 laptop; the single-core gap is a '
-       'small factor), CP 2025 does not report when within its runs each record was found, and we did not rerun '
+       '', '*Caveats: different hardware (Xeon E5-2640 v4 servers vs. an Apple M3 laptop; no hardware calibration was performed; '
+       '), CP 2025 does not report when within its runs each record was found, and we did not rerun '
        'either pipeline. See the paper for details.*', '',
        '### At a glance', '',
        '![New best imbalance per cell, shaded by reduction](figures/heatmap.png)', '',
@@ -123,12 +128,12 @@ for r in rows:
 out += ['', '### Size of each improvement', '',
         '![Previous best vs. new value for every improved instance](figures/dumbbell.png)', '',
         '*Previous best (open circles) and new value (filled) for each improved instance. '
-        'Gains grow with instance size.*', '',
+        'Reductions are relative to CP 2025 Table 1.*', '',
         '### Effect of the time budget', '',
         '![Mean reduction vs. time per run](figures/budget.png)', '',
         f'*Mean reduction relative to the previous best over the {len(full)} instances run at all three '
         'budgets (k ≥ 4, n ≥ 9). One single-threaded run per budget, each with a different seed. '
-        'Longer runs widen the margin; the table gives the exact numbers.*', '',
+        'These separate seeds do not isolate the effect of budget or form one trajectory.*', '',
         '| time per run | ' + ' | '.join(f'{s // 60} min' for s in secs) + ' |',
         '|---|' + '---:|' * len(secs),
         '| mean reduction | ' + ' | '.join(

@@ -11,6 +11,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <errno.h>
 
 #define MAXN 64
 static int k, n, T;
@@ -47,11 +48,30 @@ static long viol(void) {
 }
 
 int main(int argc, char **argv) {
-    if (argc < 5) { fprintf(stderr, "usage: sa k n seconds seed [target3]\n"); return 1; }
-    k = atoi(argv[1]); n = atoi(argv[2]);
-    double secs = atof(argv[3]);
-    rs = strtoull(argv[4], 0, 10) * 2654435761ULL + 88172645463325252ULL;
-    long target = argc > 5 ? atol(argv[5]) : -1;
+    if (argc < 5 || argc > 6) {
+        fprintf(stderr, "usage: sa k n seconds seed [target3]\n"); return 1;
+    }
+    char *end;
+    errno = 0;
+    long parsed_k = strtol(argv[1], &end, 10);
+    if (errno || end == argv[1] || *end || parsed_k < 2 || parsed_k > MAXN) goto invalid;
+    errno = 0;
+    long parsed_n = strtol(argv[2], &end, 10);
+    if (errno || end == argv[2] || *end || parsed_n < parsed_k || parsed_n > MAXN) goto invalid;
+    k = (int)parsed_k; n = (int)parsed_n;
+    errno = 0;
+    double secs = strtod(argv[3], &end);
+    if (errno || end == argv[3] || *end || !isfinite(secs) || secs <= 0) goto invalid;
+    errno = 0;
+    unsigned long long seed = strtoull(argv[4], &end, 10);
+    if (errno || end == argv[4] || *end || strspn(argv[4], "0123456789") != strlen(argv[4])) goto invalid;
+    rs = seed * 2654435761ULL + 88172645463325252ULL;
+    long target = -1;
+    if (argc == 6) {
+        errno = 0;
+        target = strtol(argv[5], &end, 10);
+        if (errno || end == argv[5] || *end || target < 0) goto invalid;
+    }
     T = k * (n + 1);
     double W = k;   // adaptive penalty weight per column violation
 
@@ -67,6 +87,7 @@ int main(int argc, char **argv) {
     double Temp0 = 2.0 * k, Temp = Temp0;
     long it = 0, lastimp = 0;
     double besttime = 0.0;
+    if (bestc <= target) goto report;
 
     for (;;) {
         it++;
@@ -120,6 +141,7 @@ int main(int argc, char **argv) {
         Temp *= 0.9999995;
         if (Temp < 0.05) Temp = 0.05;
     }
+report:
     // verify best from scratch
     if (bestc < 0) { printf("NONE\n"); return 0; }
     memcpy(L, best, sizeof L);
@@ -132,4 +154,8 @@ int main(int argc, char **argv) {
     fprintf(stderr, "TIME_TO_BEST %.3f\n", besttime);
     for (int i = 0; i < k; i++) { for (int j = 0; j < n; j++) printf("%d ", L[i][j] + 1); printf("\n"); }
     return 0;
+invalid:
+    fprintf(stderr, "invalid arguments: require 2 <= k <= n <= %d, finite seconds > 0, "
+                    "unsigned seed, and optional integer target3 >= 0\n", MAXN);
+    return 1;
 }

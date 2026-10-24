@@ -5,7 +5,11 @@ import csv
 import os
 import statistics as st
 
+from timing import load_timing_results
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Refuse incomplete/censored timing data before writing any publication artifacts.
+VERIFIED_TIMING = load_timing_results()
 rows = list(csv.DictReader(open(os.path.join(ROOT, 'results', 'results.csv'))))
 for r in rows:
     r['k'], r['n'] = int(r['k']), int(r['n'])
@@ -47,7 +51,7 @@ macros = {
     'TopCell': f"${top['k']}\\times{top['n']}$", 'TopOld': top['previous'], 'TopNew': top['new'],
     'NumImprovedOneMin': len(one_min),
 }
-trows = list(csv.DictReader(open(os.path.join(ROOT, 'results', 'timing.csv'))))
+trows = VERIFIED_TIMING
 beat = [r for r in trows if r['kind'] == 'beat_cp2025']
 beat_t = [float(r['seconds']) for r in beat]
 per_cell = {}
