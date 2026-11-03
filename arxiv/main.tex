@@ -263,8 +263,9 @@ optimal~\citep{RamaswamySzeider2023,MirkaEtAl2023}.
 work, with the previous best value struck through below it. Previous values are those collected
 in Table~1 of~\citet{VoborilRamaswamySzeider2025}, which includes results of
 \citep{DiazLeBrasGomes2017,RamaswamySzeider2023} and of LLM-generated streamliners.
-Plain: a record that our search matches. Every value in the table is attained by a rectangle
-certified in Lean (\leanref{Certificates.exists_k*_n*}, \cref{sec:lean}).}
+Plain: a record that our search matches. Every bold or plain value is attained by a rectangle
+certified in Lean (\leanref{Certificates.exists_k*_n*}, \cref{sec:lean}). The struck-through
+values are taken from the literature and are not certified.}
 \label{tab:results}
 \end{table}
 
@@ -427,7 +428,7 @@ Why does imbalance grow so quickly with $n$ (\cref{tab:results}), and why can sq
 balanced? The point picture gives a short answer. For fixed $k$, there is not enough room in
 $[n]^k$ for $n$ points that are pairwise far apart.
 
-\begin{theorem}[\leantag{cubic_lower_bound}]\label{thm:cubic}
+\begin{theorem}[\leantag{cubic_lower_bound_ceil}]\label{thm:cubic}
 Let $L$ be a $k\times n$ Latin rectangle and $s\ge 1$ an integer, and put
 $B=\ceil{n/s}^k$. Then
 \[
@@ -592,7 +593,7 @@ segments?
 Most computational results on balanced rectangles rest on unverified programs. The DRAT proofs
 of~\citet{RamaswamySzeider2023} are the exception. We formalised the parts of
 this paper where formalisation is cheap and useful, in Lean~4~\citep{deMouraUllrich2021} with
-Mathlib~\citep{mathlib2020}. The development has about 600 hand-written lines plus generated
+Mathlib~\citep{mathlib2020}. The development has about 700 hand-written lines plus generated
 certificates. It is in the \texttt{lean/} directory of the repository, and
 \cref{tab:lean} maps the statements of the paper to Lean names.
 
@@ -607,10 +608,13 @@ statement in the paper & Lean name & uses \\
 all rectangles (\cref{tab:results,tab:two}, \cref{fig:optimum}) & \leanref{Certificates.exists_k*_n*} & core \\
 $I=\mathrm{imb3}/3$; $t$ is the mean distance & \leanref{imbalance_eq_imb3}, \leanref{sum_dist} & Mathlib \\
 identity~\eqref{eq:half} & \leanref{imbalance_eq_two_mul_sum_pos} & Mathlib \\
-\cref{thm:cubic}, pigeonhole bound & \leanref{cubic_lower_bound} & Mathlib \\
+\cref{thm:cubic}, pigeonhole bound & \leanref{cubic_lower_bound_ceil} & Mathlib \\
 \cref{thm:cubic}, $\liminf\ge c_k$ & \leanref{eventually_lower_bound} & Mathlib \\
 \cref{thm:cubic}, $\limsup\le k/3$ & \leanref{imbalance_le} & Mathlib \\
 $c_2=4/375$ and $c_k=k/(12\cdot4^k)$, $k\ge3$ & \leanref{lowerConst_two_le}, \leanref{lowerConst_le_four} & Mathlib \\
+\midrule
+rectangles of~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025} & \leanref{Certificates.exists_pub_*} & core \\
+spec = Latin arrays; non-vacuous & \leanref{arrayEquiv}, \leanref{nonempty_of_le} & Mathlib \\
 \midrule
 optimality in \cref{thm:3x9}; \cref{prop:rowgroup,prop:limit} & \multicolumn{2}{l}{not formalised} \\
 \bottomrule
@@ -627,6 +631,7 @@ theorems use the three standard axioms \leanref{propext}, \leanref{Classical.cho
 certificates rely on. It imports only Lean's core library, not Mathlib. It uses the point picture
 of \cref{sec:prelim}: a rectangle is the function $(i,u)\mapsto c_i(u)$, with indices starting
 at~$0$.
+\par\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}
 structure LatinRect (k n : Nat) where
   col : Fin k $\to$ Fin n $\to$ Fin n                -- col i u = column of symbol u in row i
@@ -640,6 +645,7 @@ def imb3 (L : LatinRect k n) : Nat :=                   -- $3I=\sum_{u<v}|3d(u,v
   fsum fun u => fsum fun v =>
     if u < v then ((3 * L.dist u v : Int) - k * (n + 1)).natAbs else 0
 \end{lstlisting}
+\end{minipage}
 Here \leanref{fsum f} is the sum of the list \leanref{[f 0, ..., f (n-1)]}, and
 \leanref{absDiff a b} is $(a\mathbin{\dot-}b)+(b\mathbin{\dot-}a)=\abs{a-b}$, with truncated
 subtraction~$\dot-$ on $\N$. We certify the integer $3I$, so
@@ -694,12 +700,31 @@ theorem eventually_lower_bound (k m : $\mathbb N$) (hm : 3 $\le$ m) {$\varepsilo
 \end{minipage}
 where \leanref{target k n} is $t=k(n+1)/3$ and \leanref{lowerConst k m} is
 $k\,m^{-k}(\frac13-\frac1m)$. The first is slightly more general than \cref{thm:cubic}: it
-allows any $M$ intervals per axis with $n\le Ms$. The second states the liminf bound in the
+allows any $M$ intervals per axis with $n\le Ms$. Its instance $M=\ceil{n/s}$,
+\leanref{cubic_lower_bound_ceil}, is \cref{thm:cubic} word for word. The second states the liminf bound in the
 eventually form, for each $m$, so we do not have to define $\min I$ as a function of~$n$. The
 proof follows the paper. It reindexes along the row permutations
 (\leanref{Fintype.sum_bijective}) to show that $t$ is the average distance, symmetrises the sum over
 $u<v$ to one over ordered pairs, and uses Mathlib's \leanref{sq_sum_le_card_mul_sum_sq} for
 Cauchy--Schwarz.
+
+\paragraph{Is the specification the right one?} A formal proof is only as good as its
+statement, and a definition that differs subtly from the intended one would make every
+certificate meaningless. We guard against this in four ways.
+(i)~\emph{Agreement with the literature.} The 14 rectangles printed
+in~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025}, of sizes $3\times4$ to
+$12\times13$, are certified with the imbalances that those papers report
+(\leanref{Certificates.exists_pub_*}). This tests the definitions of $d$ and $I$ against
+independent data, not against our own Python checker.
+(ii)~\emph{Agreement with the textbook definition.} \leanref{arrayEquiv} is a bijection between
+\leanref{LatinRect k n} and arrays $A$ (row $i$, column $j$) whose rows are permutations and whose
+columns have no repeats, and \leanref{ofArray_col} shows that \leanref{col i u} is the column of
+symbol $u$ in row $i$, that is, $c_i(u)$.
+(iii)~\emph{Non-vacuity.} \leanref{nonempty_of_le} shows that \leanref{LatinRect k n} is
+inhabited for every $k\le n$, so the universally quantified theorems are not vacuous.
+(iv)~\emph{Agreement with the paper.} A test parses \cref{tab:results,tab:two} and the values
+quoted in the text and compares them with the Lean statements. Changing a single printed value
+makes it fail.
 
 \paragraph{What is not formalised.} The optimality half of \cref{thm:3x9} is the main gap. The
 branch and bound visits $5.5\cdot10^9$ nodes, far more than kernel evaluation can handle. A

@@ -6,3 +6,4 @@ import BalancedLatin.Certificates.N11
 import BalancedLatin.Certificates.N12
 import BalancedLatin.Certificates.N13
 import BalancedLatin.Certificates.TwoRow
+import BalancedLatin.Certificates.Published

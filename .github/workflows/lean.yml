@@ -22,3 +22,5 @@ jobs:
         run: |
           python3 code/make_lean.py
           git diff --exit-code lean/BalancedLatin/Certificates lean/BalancedLatin/Certificates.lean
+      - name: Numbers in the paper match the Lean statements
+        run: python3 code/test_lean_consistency.py

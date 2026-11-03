@@ -7,6 +7,8 @@ Machine-checked results from *Leaving the Cyclic Orbit* (`../arxiv/main.pdf`).
 | Specification: Latin rectangle, distance `d`, `3·I` | `BalancedLatin/Defs.lean` (74 lines) | Lean core only |
 | All 62 reported rectangles: Latin and `3·I` = claimed value | `BalancedLatin/Certificates/*.lean` (generated) | `Defs.lean` only |
 | Equation (1), the pigeonhole theorem, the cubic law, the constants `c_k` | `BalancedLatin/Cubic.lean` | Mathlib |
+| 14 rectangles printed in CP 2023 / CP 2025, against the values *those papers* report | `BalancedLatin/Certificates/Published.lean` (generated) | `Defs.lean` only |
+| Spec validation: `LatinRect` ≃ Latin arrays, non-vacuity, `thm:cubic` as stated | `BalancedLatin/Faithfulness.lean` | Mathlib |
 | Map from statements in the paper to Lean names | `BalancedLatin/Paper.lean` | everything |
 
 ## Build
@@ -57,6 +59,24 @@ slightly stronger: it needs only `k(s−1) ≤ t`, and any number `M` of interva
 `n ≤ M·s`. `eventually_lower_bound` gives `I ≥ (k·m^{-k}·(1/3 − 1/m) − ε)·n³` for all large `n`,
 i.e. `liminf min I/n³ ≥ c_k`, and `imbalance_le` gives `I ≤ k·n³/3`. These use the standard
 axioms `propext`, `Classical.choice` and `Quot.sound`.
+
+## Is the specification the right one?
+
+A formal proof is only as good as its statement. Four independent checks tie the Lean
+definitions to the problem:
+
+1. **Literature.** `Certificates/Published.lean` certifies the 14 rectangles printed in
+   Peruvemba Ramaswamy–Szeider (CP 2023) and Voboril et al. (CP 2025), sizes 3×4 to 12×13,
+   with the imbalances *those papers report*. This tests `dist` and `imb3` against independent
+   data, not against our own Python checker.
+2. **Textbook definition.** `arrayEquiv` is a bijection between `LatinRect k n` and arrays
+   `A i j` (row `i`, column `j`) with permutation rows and repeat-free columns. `ofArray_col`
+   shows that `col i u` is the column of symbol `u` in row `i`, the paper's `cᵢ(u)`.
+3. **Non-vacuity.** `nonempty_of_le`: `LatinRect k n` is inhabited for every `k ≤ n`, so the
+   universally quantified theorems are not vacuously true.
+4. **Paper.** `code/test_lean_consistency.py` parses Tables 1 and 3 of the paper and the values
+   quoted in its text, and compares them with the Lean statements; it also checks that every data
+   file has a certificate with identical rows. Changing a single printed value makes it fail.
 
 ## Not formalized
 

@@ -1,5 +1,6 @@
 import BalancedLatin.Certificates
 import BalancedLatin.Cubic
+import BalancedLatin.Faithfulness
 
 /-!
 # Index: statements of the paper and where they are proved
@@ -7,10 +8,13 @@ import BalancedLatin.Cubic
 | paper                                   | Lean                                                  |
 |-----------------------------------------|-------------------------------------------------------|
 | definitions of `d`, `I` (Section 2)     | `LatinRect`, `LatinRect.dist`, `LatinRect.imbalance`  |
+| `LatinRect` = Latin arrays of the paper | `arrayEquiv`, `ofArray_col`                           |
+| `LatinRect k n` is inhabited for k ≤ n  | `nonempty_of_le`                                      |
+| spec agrees with CP 2023/2025 values    | `Certificates.exists_pub_*` (14 published rectangles) |
 | `3I` is an integer                      | `LatinRect.imbalance_eq_imb3`                         |
 | `t` is the average distance             | `LatinRect.sum_dist`, `LatinRect.sum_dev`             |
 | Equation (1): `I = 2∑_{u<v}(t − d)⁺`    | `LatinRect.imbalance_eq_two_mul_sum_pos`              |
-| pigeonhole theorem (`thm:cubic`)        | `LatinRect.cubic_lower_bound`                         |
+| pigeonhole theorem (`thm:cubic`)        | `LatinRect.cubic_lower_bound_ceil` (as stated), `LatinRect.cubic_lower_bound` (general) |
 | cubic law, `liminf ≥ c_k`               | `LatinRect.eventually_lower_bound`                    |
 | cubic law, `limsup ≤ k/3`               | `LatinRect.imbalance_le`                              |
 | Remark (constants `c₂`, `c_k`)          | `lowerConst_two_le`, `lowerConst_le_four`, ...        |
