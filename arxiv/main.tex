@@ -11,6 +11,16 @@
 \usepackage{microtype}
 \usepackage{enumitem}
 \usepackage{placeins}
+\usepackage{listings}
+\lstdefinelanguage{lean4}{
+  morekeywords={def,theorem,structure,where,fun,if,then,else,by,namespace,end,open,import,let,have,in},
+  sensitive=true, morecomment=[l]{--}, morestring=[b]"}
+\lstset{language=lean4, basicstyle=\ttfamily\footnotesize, keywordstyle=\bfseries\color{MidnightBlue},
+  commentstyle=\itshape\color{gray}, columns=fullflexible, keepspaces=true, mathescape=true,
+  xleftmargin=1em, aboveskip=6pt, belowskip=6pt, upquote=true}
+% Lean name of a formalised statement, e.g. \leanref{cubic_lower_bound}
+\newcommand{\leanref}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\leantag}[1]{Lean: \leanref{#1}}
 \usepackage[font=small,labelfont=bf,labelsep=period,skip=6pt]{caption}
 \usepackage[colorlinks=true,linkcolor=MidnightBlue,citecolor=MidnightBlue,urlcolor=MidnightBlue]{hyperref}
 \usepackage[capitalise,noabbrev]{cleveref}
@@ -72,6 +82,9 @@ between $4/375$ and about $0.120$. Along the way we observe that perfect balance
 it forces $k=\Omega(n/\log n)$ rows.
 For $2\times n$ rectangles, single two-minute annealing runs improve five of the seven six-hour MIP
 upper bounds for $14\le n\le 20$.
+Finally, every rectangle reported in this paper is checked in the kernel of the Lean~4
+proof assistant against a 74-line specification that imports nothing but Lean's core library,
+and the pigeonhole theorem and the cubic law are proved in Lean with Mathlib.
 \end{abstract}
 
 \section{Introduction}
@@ -131,6 +144,12 @@ $15\le n\le19$, ties at $n=14$ and is worse at $n=20$. Near-optimal
 $2\times n$ rectangles look like a few broken diagonals, and the normalised imbalance appears to
 stay near $0.11\,n^3$ up to $n=64$, which suggests a limit of about $0.12$. The limit exists and is the minimum of a continuous functional
 on permutons.
+
+\item \textbf{A Lean formalisation} (\cref{sec:lean}). All 62 rectangles behind our upper bounds
+are certified by evaluation in Lean's kernel. The check uses no \texttt{native\_decide} and no
+library, so it trusts only the kernel and a short specification. The identity~\eqref{eq:half},
+\cref{thm:cubic} and the cubic law are proved in Lean with Mathlib. Each formalised statement
+names the Lean theorem that proves it.
 \end{enumerate}
 
 None of the algorithmic ingredients is new by itself. Simulated
@@ -159,8 +178,9 @@ $d(u,v)-t$ sum to zero, and
   I(L)=2\sum_{u<v}\bigl(t-d(u,v)\bigr)^+ .
 \end{equation}
 Imbalance is therefore caused by the pairs that are too close. This one-line identity is the
-engine of \cref{sec:cubic}. The quantity $3I$ is an integer, and as in the literature we write
-imbalances as $x.0$, $x.3$ and $x.6$ for $x$, $x+\frac13$ and $x+\frac23$.
+engine of \cref{sec:cubic}. (In Lean, the average is \leanref{LatinRect.sum_dist} and the identity is
+\leanref{LatinRect.imbalance_eq_two_mul_sum_pos}.) The quantity $3I$ is an integer, and as in the
+literature we write imbalances as $x.0$, $x.3$ and $x.6$ for $x$, $x+\frac13$ and $x+\frac23$.
 
 \paragraph{Two dictionaries.} A rectangle can be read through its rows or through its points.
 Through its rows it is a $k$-tuple $(r_1,\dots,r_k)$ of bijections $r_i\colon[n]\to[n]$ from
@@ -219,7 +239,8 @@ reheats after $4\cdot10^7$ proposals without improvement. Runs are single-thread
 reported rectangle is re-evaluated from scratch. An independent checker, written from the
 definition with exact rational arithmetic, verifies every reported rectangle and
 reproduces all fourteen rectangles printed
-in~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025}.
+in~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025}. Every reported rectangle is also
+certified in Lean's kernel (\cref{sec:lean}).
 
 \section{Improved upper bounds}\label{sec:results}
 
@@ -242,7 +263,9 @@ optimal~\citep{RamaswamySzeider2023,MirkaEtAl2023}.
 work, with the previous best value struck through below it. Previous values are those collected
 in Table~1 of~\citet{VoborilRamaswamySzeider2025}, which includes results of
 \citep{DiazLeBrasGomes2017,RamaswamySzeider2023} and of LLM-generated streamliners.
-Plain: a record that our search matches.}
+Plain: a record that our search matches. Every bold or plain value is attained by a rectangle
+certified in Lean (\leanref{Certificates.exists_k*_n*}, \cref{sec:lean}). The struck-through
+values are taken from the literature and are not certified.}
 \label{tab:results}
 \end{table}
 
@@ -361,7 +384,8 @@ rectangle either finds a better rectangle or proves that none exists.
 The minimum imbalance of a $3\times 9$ Latin rectangle is $56$.
 \end{theorem}
 
-\noindent The upper bound is the rectangle of \cref{fig:optimum}. The branch and bound
+\noindent The upper bound is the rectangle of \cref{fig:optimum}. It is certified in Lean as
+\leanref{Paper.three_by_nine}, but the lower bound is not formalised (\cref{sec:lean}). The branch and bound
 explores $5.5\cdot10^9$ nodes in $140$ CPU seconds and finds no rectangle with $I<56$. Run with
 the bound $3I<169$ instead, it finds a rectangle of value $56$, as a sanity check. The value
 $56$ itself was already found by~\citet{DiazLeBrasGomes2017}. To our knowledge its optimality
@@ -404,13 +428,13 @@ Why does imbalance grow so quickly with $n$ (\cref{tab:results}), and why can sq
 balanced? The point picture gives a short answer. For fixed $k$, there is not enough room in
 $[n]^k$ for $n$ points that are pairwise far apart.
 
-\begin{theorem}\label{thm:cubic}
+\begin{theorem}[\leantag{cubic_lower_bound_ceil}]\label{thm:cubic}
 Let $L$ be a $k\times n$ Latin rectangle and $s\ge 1$ an integer, and put
 $B=\ceil{n/s}^k$. Then
 \[
   I(L)\ \ge\ n\Bigl(\frac nB-1\Bigr)\Bigl(\frac{k(n+1)}3-k(s-1)\Bigr)
 \]
-whenever both brackets are positive. Consequently, for every fixed $k$,
+whenever $k(s-1)\le k(n+1)/3$. Consequently, for every fixed $k$,
 \[
   c_k\ \le\ \liminf_{n\to\infty}\frac{\min I}{n^3}\ \le\ \limsup_{n\to\infty}\frac{\min I}{n^3}\ \le\ \frac k3,
   \qquad
@@ -426,20 +450,27 @@ convexity gives
 \[
   \sum_b\binom{m_b}{2}\ \ge\ B\binom{n/B}{2}=\frac n2\Bigl(\frac nB-1\Bigr)
 \]
-pairs that share a box. Each of them has $t-d\ge t-k(s-1)$. Inserting this
+pairs that share a box. Each of them has $t-d\ge t-k(s-1)\ge0$. Inserting this
 into~\eqref{eq:half} proves the first claim. For the second, take $s=\ceil{n/m}$ for a
-fixed $m$. Then $B\le m^k$ and $s-1<n/m$, and the bound becomes
-$k\,m^{-k}(\frac13-\frac1m)\,n^3-O(n^2)$. For the upper bound, $k\le d\le k(n-1)$ gives
+fixed $m\ge3$. Then $B\le m^k$ and $s-1\le(n-1)/m$, and the bound becomes
+$I\ge k(\frac13-\frac1m)(n^3/m^k-n^2)$ (\leanref{lower_bound_explicit}), which is
+$k\,m^{-k}(\frac13-\frac1m)\,n^3-O(n^2)$ (\leanref{eventually_lower_bound}). For the upper bound
+(\leanref{imbalance_le}), $k\le d\le k(n-1)$ gives
 $\abs{d-t}\le\frac{2k(n-2)}3$, and $\binom n2\cdot\frac{2kn}{3}\le\frac{k n^3}{3}$.
 \end{proof}
+
+\noindent The Lean proof (\cref{sec:lean}) follows these lines, with the convexity step done by
+the Cauchy--Schwarz inequality $(\sum_b m_b)^2\le B\sum_b m_b^2$. It allows any number $M$ of
+intervals per axis with $n\le Ms$, so $B=M^k$.
 
 The proof is a pigeonhole argument, and \cref{fig:geometry}a shows it at work. Clustered points
 are expensive, and in a low-dimensional grid clustering is unavoidable. Three remarks put the
 theorem in context.
 
 \begin{remark}[Constants]
-For $k=2$ the maximum is attained at $m=5$, giving $c_2=4/375\approx0.0107$. For $k\ge3$,
-$c_k=k/(12\cdot4^k)$, attained at $m=4$. In the benchmark range the finite-$n$ bound is weak: for $2\times13$
+For $k=2$ the maximum is attained at $m=5$, giving $c_2=4/375\approx0.0107$
+(\leanref{lowerConst_two_le}). For $k\ge3$,
+$c_k=k/(12\cdot4^k)$, attained at $m=4$ (\leanref{lowerConst_le_four}). In the benchmark range the finite-$n$ bound is weak: for $2\times13$
 it gives $7.7$, against the true optimum $218.6$, and for $k=3$ it becomes positive only at
 $n=28$. Its message is asymptotic. Even the \emph{average} deviation per pair, $I/\binom n2$, grows linearly in $n$, the
 same order as the target $t$ itself. For fixed $k$, rectangles are not merely imperfect but
@@ -557,6 +588,155 @@ $4/375\approx0.011$ and about $0.120$. Is the minimiser unique, and is it a fini
 segments?
 \end{question}
 
+\section{Formal verification in Lean 4}\label{sec:lean}
+
+Most computational results on balanced rectangles rest on unverified programs. The DRAT proofs
+of~\citet{RamaswamySzeider2023} are the exception. We formalised the parts of
+this paper where formalisation is cheap and useful, in Lean~4~\citep{deMouraUllrich2021} with
+Mathlib~\citep{mathlib2020}. The development has about 700 hand-written lines plus generated
+certificates. It is in the \texttt{lean/} directory of the repository, and
+\cref{tab:lean} maps the statements of the paper to Lean names.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lll@{}}
+\toprule
+statement in the paper & Lean name & uses \\
+\midrule
+all rectangles (\cref{tab:results,tab:two}, \cref{fig:optimum}) & \leanref{Certificates.exists_k*_n*} & core \\
+$I=\mathrm{imb3}/3$; $t$ is the mean distance & \leanref{imbalance_eq_imb3}, \leanref{sum_dist} & Mathlib \\
+identity~\eqref{eq:half} & \leanref{imbalance_eq_two_mul_sum_pos} & Mathlib \\
+\cref{thm:cubic}, pigeonhole bound & \leanref{cubic_lower_bound_ceil} & Mathlib \\
+\cref{thm:cubic}, $\liminf\ge c_k$ & \leanref{eventually_lower_bound} & Mathlib \\
+\cref{thm:cubic}, $\limsup\le k/3$ & \leanref{imbalance_le} & Mathlib \\
+$c_2=4/375$ and $c_k=k/(12\cdot4^k)$, $k\ge3$ & \leanref{lowerConst_two_le}, \leanref{lowerConst_le_four} & Mathlib \\
+\midrule
+rectangles of~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025} & \leanref{Certificates.exists_pub_*} & core \\
+spec = Latin arrays; non-vacuous & \leanref{arrayEquiv}, \leanref{nonempty_of_le} & Mathlib \\
+\midrule
+optimality in \cref{thm:3x9}; \cref{prop:rowgroup,prop:limit} & \multicolumn{2}{l}{not formalised} \\
+\bottomrule
+\end{tabular}
+\caption{Formalised statements. All names are in the namespace \leanref{BalancedLatin}.
+``Core'': the proof uses only Lean's core library and the 74-line specification
+\texttt{Defs.lean}; ``Mathlib'': it also uses Mathlib. The certificates use only the axiom \leanref{propext}; the
+theorems use the three standard axioms \leanref{propext}, \leanref{Classical.choice} and
+\leanref{Quot.sound}. No statement uses \leanref{sorry} or \leanref{native_decide}.}
+\label{tab:lean}
+\end{table}
+
+\paragraph{Specification.} The file \texttt{Defs.lean} contains the whole specification that the
+certificates rely on. It imports only Lean's core library, not Mathlib. It uses the point picture
+of \cref{sec:prelim}: a rectangle is the function $(i,u)\mapsto c_i(u)$, with indices starting
+at~$0$.
+\par\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}
+structure LatinRect (k n : Nat) where
+  col : Fin k $\to$ Fin n $\to$ Fin n                -- col i u = column of symbol u in row i
+  row_inj : $\forall$ i u v, col i u = col i v $\to$ u = v
+  col_inj : $\forall$ u i j, col i u = col j u $\to$ i = j
+
+def dist (L : LatinRect k n) (u v : Fin n) : Nat :=     -- $d(u,v)=\sum_i|c_i(u)-c_i(v)|$
+  fsum fun i => absDiff (L.col i u).val (L.col i v).val
+
+def imb3 (L : LatinRect k n) : Nat :=                   -- $3I=\sum_{u<v}|3d(u,v)-k(n+1)|$
+  fsum fun u => fsum fun v =>
+    if u < v then ((3 * L.dist u v : Int) - k * (n + 1)).natAbs else 0
+\end{lstlisting}
+\end{minipage}
+Here \leanref{fsum f} is the sum of the list \leanref{[f 0, ..., f (n-1)]}, and
+\leanref{absDiff a b} is $(a\mathbin{\dot-}b)+(b\mathbin{\dot-}a)=\abs{a-b}$, with truncated
+subtraction~$\dot-$ on $\N$. We certify the integer $3I$, so
+that the kernel never handles fractions. In \texttt{Cubic.lean} the imbalance $I$ is defined over
+$\mathbb Q$ exactly as in \cref{sec:prelim}, and \leanref{imbalance_eq_imb3} proves $I=\mathrm{imb3}/3$.
+
+\paragraph{Certificates by kernel evaluation.} A script copies each rectangle from its data file
+into Lean, after cross-checking the claimed value with the independent Python checker. For
+\cref{fig:optimum} it produces
+\begin{lstlisting}
+def rows_k3_n9 : List (List Nat) :=
+  [[1, 2, 3, 4, 5, 6, 7, 8, 9], [8, 3, 1, 6, 7, 4, 5, 9, 2], [4, 5, 8, 1, 9, 3, 2, 6, 7]]
+
+def rect_k3_n9 : LatinRect 3 9 where
+  col := colOfRows rows_k3_n9
+  row_inj := by decide +kernel
+  col_inj := by decide +kernel
+
+theorem imb3_k3_n9 : rect_k3_n9.imb3 = 168 := by decide +kernel
+theorem exists_k3_n9 : $\exists$ L : LatinRect 3 9, L.imb3 = 168 := $\langle$rect_k3_n9, imb3_k3_n9$\rangle$
+\end{lstlisting}
+The tactic \leanref{decide +kernel} is proof by reflection. The proposition has a decision
+procedure, written in Lean, and the kernel itself reduces that procedure to \leanref{true} while
+type-checking the proof term. The alternative, \leanref{native_decide}, runs compiled code. It
+adds the axiom \leanref{Lean.ofReduceBool}, so it trusts the compiler and every
+\leanref{implemented_by} annotation. Our certificates avoid it, and \texttt{\#print axioms}
+reports only \leanref{propext}.
+
+The soundness of a statement such as \leanref{exists_k3_n9} does not depend on the script or on
+how \leanref{colOfRows} reads the data. Whatever function is passed as \leanref{col}, the kernel
+has checked that it is a Latin rectangle with the stated value of $3I$. To tie each certificate
+to its data file, a further theorem \leanref{faithful_k3_n9} checks that the entry of row~$i$ in
+column \leanref{col i u} is the symbol $u+1$ of the file. All 62 rectangles are certified: the 51
+of \cref{tab:results} and the eleven $2\times n$ rectangles with $14\le n\le64$ used
+in \cref{tab:two,fig:geometry,fig:cubic}. The largest are $12\times13$ and $2\times64$, which has
+2016 pairs. Elaborating all of them takes about 50\,s of CPU time on an Apple M3 laptop. As a
+negative test, changing the claimed value by one, placing a symbol twice in a column, or
+repeating a symbol in a row each makes the check fail.
+
+\paragraph{The cubic law.} \texttt{Cubic.lean} (480 lines, 14\,s) proves \cref{thm:cubic}. The
+main statements read
+\par\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}
+theorem cubic_lower_bound (L : LatinRect k n) (s M : $\mathbb N$) (hs : 0 < s) (hM : n $\le$ M * s)
+    (ht : (k : $\mathbb Q$) * (s - 1) $\le$ target k n) :
+    (n : $\mathbb Q$) * (n / (M : $\mathbb Q$) ^ k - 1) * (target k n - k * (s - 1)) $\le$ L.imbalance
+
+theorem eventually_lower_bound (k m : $\mathbb N$) (hm : 3 $\le$ m) {$\varepsilon$ : $\mathbb Q$} (h$\varepsilon$ : 0 < $\varepsilon$) :
+    $\forall^{\mathsf f}$ n in Filter.atTop, $\forall$ L : LatinRect k n,
+      (lowerConst k m - $\varepsilon$) * (n : $\mathbb Q$) ^ 3 $\le$ L.imbalance
+\end{lstlisting}
+\end{minipage}
+where \leanref{target k n} is $t=k(n+1)/3$ and \leanref{lowerConst k m} is
+$k\,m^{-k}(\frac13-\frac1m)$. The first is slightly more general than \cref{thm:cubic}: it
+allows any $M$ intervals per axis with $n\le Ms$. Its instance $M=\ceil{n/s}$,
+\leanref{cubic_lower_bound_ceil}, is \cref{thm:cubic} word for word. The second states the liminf bound in the
+eventually form, for each $m$, so we do not have to define $\min I$ as a function of~$n$. The
+proof follows the paper. It reindexes along the row permutations
+(\leanref{Fintype.sum_bijective}) to show that $t$ is the average distance, symmetrises the sum over
+$u<v$ to one over ordered pairs, and uses Mathlib's \leanref{sq_sum_le_card_mul_sum_sq} for
+Cauchy--Schwarz.
+
+\paragraph{Is the specification the right one?} A formal proof is only as good as its
+statement, and a definition that differs subtly from the intended one would make every
+certificate meaningless. We guard against this in four ways.
+(i)~\emph{Agreement with the literature.} The 14 rectangles printed
+in~\citep{RamaswamySzeider2023,VoborilRamaswamySzeider2025}, of sizes $3\times4$ to
+$12\times13$, are certified with the imbalances that those papers report
+(\leanref{Certificates.exists_pub_*}). This tests the definitions of $d$ and $I$ against
+independent data, not against our own Python checker.
+(ii)~\emph{Agreement with the textbook definition.} \leanref{arrayEquiv} is a bijection between
+\leanref{LatinRect k n} and arrays $A$ (row $i$, column $j$) whose rows are permutations and whose
+columns have no repeats, and \leanref{ofArray_col} shows that \leanref{col i u} is the column of
+symbol $u$ in row $i$, that is, $c_i(u)$.
+(iii)~\emph{Non-vacuity.} \leanref{nonempty_of_le} shows that \leanref{LatinRect k n} is
+inhabited for every $k\le n$, so the universally quantified theorems are not vacuous.
+(iv)~\emph{Agreement with the paper.} A test parses \cref{tab:results,tab:two} and the values
+quoted in the text and compares them with the Lean statements. Changing a single printed value
+makes it fail.
+
+\paragraph{What is not formalised.} The optimality half of \cref{thm:3x9} is the main gap. The
+branch and bound visits $5.5\cdot10^9$ nodes, far more than kernel evaluation can handle. A
+certificate would need either a branch and bound written and proved correct in Lean and then run
+with \leanref{native_decide}, which moves the trust from our C program to Lean's compiler, or
+a SAT encoding whose LRAT proof is checked by a verified checker. Either route also has to prove the
+symmetry reduction of \cref{sec:exact}. \Cref{prop:limit} needs permutons and weak convergence of
+measures on $[0,1]^2$, which Mathlib does not yet have. \Cref{rem:equilateral} rests on the
+theorem of \citet{AlonPudlak2003}. \Cref{prop:rowgroup} is elementary, but the row groups
+in \cref{fig:rowgroups} were computed with SymPy's Schreier--Sims implementation and are not
+certified.
+
 \section{Discussion}
 
 The three parts of this paper inform one another. The point picture says that balance is a
@@ -569,11 +749,13 @@ constant is the real object of study.
 \paragraph{Limitations.} The new upper bounds come from one run per instance and budget, so
 the search is not a controlled experiment. We did not isolate the effect of the adaptive penalty
 or rerun earlier local search head-to-head. We make no runtime comparison with earlier work. The
-optimality of $3\times 9$ rests on an uncertified program. Our lower-bound theorem is far from
+optimality of $3\times 9$ rests on an uncertified program, whereas every upper bound and the
+cubic law are checked in Lean. Our lower-bound theorem is far from
 the observed values for $k=2$ and is negligible in the benchmark range.
 
 \paragraph{Open problems.} (1)~Certify \cref{thm:3x9}, for instance with a DRAT-producing SAT
-encoding as in~\citep{RamaswamySzeider2023}, and settle $5\times8$ to $7\times8$. Our new upper
+encoding as in~\citep{RamaswamySzeider2023} or with a branch and bound verified in Lean
+(\cref{sec:lean}), and settle $5\times8$ to $7\times8$. Our new upper
 bounds are natural starting incumbents for certified solvers, and the mirror pairing
 $u\leftrightarrow n+1-u$ seen in several records is a candidate streamliner in the sense
 of~\citep{VoborilRamaswamySzeider2025}. (2)~Close the gap
@@ -583,7 +765,7 @@ counting close pairs in boxes. (3)~Determine the minimising permuton for $k=2$.
 $k\times n$ rectangles need $k\ge n/2$.
 
 \paragraph{Data and code.} Rectangles, the annealing code, the branch and bound, the exact
-checker and the scripts for every figure are at
+checker, the Lean development and the scripts for every figure are at
 \\\url{https://github.com/BrianLi009/Balanced-Latin-Rectangles}.
 
 \FloatBarrier

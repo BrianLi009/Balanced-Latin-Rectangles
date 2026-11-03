@@ -15,3 +15,6 @@ arxiv/*.log
 arxiv/*.bbl
 arxiv/*.blg
 arxiv/*.out
+
+# Lean build output (regenerate with `lake exe cache get && lake build` in lean/)
+lean/.lake/
