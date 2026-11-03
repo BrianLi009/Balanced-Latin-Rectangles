@@ -238,7 +238,7 @@ def speed_cp2023(g):
     save(fig, 'speed_cp2023')
 
 
-def records_speed(rows, g):
+def records_speed(rows, g, cp_budget=True, name='records_speed'):
     """Paper figure: for every improved instance, (a) record vs. new imbalance and
     (b) CPU time to beat the record (median and range over seeds), sharing one row axis."""
     import statistics as st
@@ -262,21 +262,26 @@ def records_speed(rows, g):
     a1.set_ylim(-0.7, N - 0.3)
     a1.set_xlabel('imbalance (lower is better)')
     a1.set_title('(a) record and new value', fontsize=8, loc='left', color=INK)
-    a1.scatter([], [], s=16, facecolor='white', edgecolor=NEUTRAL, linewidth=1.2, label='record (CP 2025)')
+    a1.scatter([], [], s=16, facecolor='white', edgecolor=NEUTRAL, linewidth=1.2,
+               label='record (CP 2025)' if cp_budget else 'previous best known')
     a1.scatter([], [], s=18, color=BLUE, label='this work')
     a1.legend(loc='upper right', frameon=False, fontsize=7, handletextpad=0.3)
     a2.set_xscale('log'); a2.minorticks_off()
-    a2.set_xlim(floor * 0.7, 4 * 3600 * 2.5)
-    a2.set_xticks([0.01, 0.1, 1, 60, 3600, 4 * 3600], ['10 ms', '0.1 s', '1 s', '1 min', '1 h', '4 h'])
-    for x in (60, 4 * 3600):
-        a2.axvline(x, color=INK2, linewidth=0.7, linestyle=(0, (3, 3)), zorder=0)
-    a2.text(4 * 3600 / 1.2, N - 0.6, 'CP 2025\nbudget (4 h)', fontsize=6.5, color=INK2, ha='right', va='top')
+    if cp_budget:
+        a2.set_xlim(floor * 0.7, 4 * 3600 * 2.5)
+        a2.set_xticks([0.01, 0.1, 1, 60, 3600, 4 * 3600], ['10 ms', '0.1 s', '1 s', '1 min', '1 h', '4 h'])
+        for x in (60, 4 * 3600):
+            a2.axvline(x, color=INK2, linewidth=0.7, linestyle=(0, (3, 3)), zorder=0)
+        a2.text(4 * 3600 / 1.2, N - 0.6, 'CP 2025\nbudget (4 h)', fontsize=6.5, color=INK2, ha='right', va='top')
+    else:  # arXiv version: no cross-study time reference
+        a2.set_xlim(floor * 0.7, 400)
+        a2.set_xticks([0.01, 0.1, 1, 10, 60, 300], ['10 ms', '0.1 s', '1 s', '10 s', '1 min', '5 min'])
     a2.set_xlabel('CPU time to beat the record (log scale)')
     a2.set_title('(b) time to beat the record, 5 seeds', fontsize=8, loc='left', color=INK)
     a2.tick_params(axis='y', length=0)
     for ax in (a1, a2):
         ax.grid(axis='x', color=GRID, linewidth=0.5); ax.set_axisbelow(True)
-    save(fig, 'records_speed', exact=True)
+    save(fig, name, exact=True)
 
 
 def speed_cp2023_paper(g):
@@ -315,3 +320,4 @@ if __name__ == '__main__':
     if g:
         speed(g); speed_cp2023(g)
         records_speed(rows, g); speed_cp2023_paper(g)
+        records_speed(rows, g, cp_budget=False, name='records_speed_arxiv')

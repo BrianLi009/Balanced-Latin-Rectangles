@@ -9,3 +9,9 @@ paper/*.blg
 paper/*.out
 paper/*.fls
 paper/*.fdb_latexmk
+code/bnb
+arxiv/*.aux
+arxiv/*.log
+arxiv/*.bbl
+arxiv/*.blg
+arxiv/*.out

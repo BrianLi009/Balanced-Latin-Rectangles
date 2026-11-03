@@ -7,6 +7,11 @@ and matches the other 18. Every rectangle is included and can be checked indepen
 
 Paper: [`paper/main.pdf`](paper/main.pdf) — *Simple Local Search Improves 33 Published Upper Bounds for Balanced Latin Rectangles*.
 
+**arXiv draft:** [`arxiv/main.pdf`](arxiv/main.pdf) — *Leaving the Cyclic Orbit: Local Search, Exact Search and a Cubic Law for
+Balanced Latin Rectangles*. It adds the row-group explanation, a branch-and-bound proof that min I(3×9) = 56,
+the Θ(n³) lower bound for fixed k, and 2×n results for 14 ≤ n ≤ 64. The source in `arxiv/` is self-contained
+(set `arxiv/main.tex` as the main document in Overleaf).
+
 <!-- RESULTS:START -->
 
 ## Results
@@ -167,6 +172,10 @@ Values like `158.6` mean 158 + 2/3, and `.3` means + 1/3, as in the literature.
 | `code/plots.py`, `code/make_tables.py`, `code/make_readme.py` | Figures, the paper's table and numbers, and this README's results section |
 | `code/run_all.sh` | Reproduces every run (about 1.5 hours on 8 cores) |
 | `paper/` | LaTeX source and PDF |
+| `arxiv/` | Self-contained LaTeX source, figures and PDF of the arXiv draft |
+| `code/bnb.c` | Exact branch and bound (`cc -O2 -o bnb bnb.c`; `./bnb k n bound3 [cpu_s]` decides whether a rectangle with 3·I < bound3 exists) |
+| `code/arxiv_figures.py` | Figures of the arXiv draft (needs numpy, matplotlib, sympy) |
+| `results/k2_large/` | Best 2×n rectangles found for n = 14..20, 24, 32, 48, 64 (one 120 s run each, seed 7) |
 
 ## Reproduce
 
