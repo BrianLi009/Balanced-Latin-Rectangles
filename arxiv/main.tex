@@ -42,8 +42,8 @@
 
 \input{numbers.tex}
 
-\title{\bfseries Leaving the Cyclic Orbit:\\[2pt]
-\large Local Search, Exact Search and a Cubic Law for Balanced Latin Rectangles}
+\title{\bfseries Balanced Latin Rectangles:\\[2pt]
+\large New Records, a New Optimum and Cubic Growth}
 \author{Zhengyu Li\thanks{Georgia Institute of Technology. \texttt{brian.li@gatech.edu}}
   \and Vijay Ganesh\thanks{Georgia Institute of Technology. \texttt{vganesh45@gatech.edu}}}
 \date{}
@@ -59,16 +59,17 @@ these points are pairwise equidistant in the $\ell_1$ metric, and its \emph{imba
 measures how far it is from that ideal. We study the minimum imbalance from three sides.
 \emph{Constructively}, a simulated annealing that moves symbols within rows and only penalises
 column clashes improves \NumImproved{} of the \NumCells{} best known values for $8\le n\le 13$,
-by up to \MaxGain\%, and matches the rest.
-We explain why earlier column-based local search could not find these rectangles. Every
-column operation preserves a permutation group attached to the rectangle, its
-\emph{row group}. For cyclic rectangles this group has order at most $n$, while
-32 of our 33 new rectangles have row group $\Alt_n$ or $\Sym_n$.
-\emph{Exactly}, a short branch and bound proves that the minimum imbalance of a $3\times 9$
-rectangle is $56$, a value found by Díaz et al.\ whose optimality was open, and independently confirms the known optima for $3\times8$ and $4\times8$.
-\emph{Asymptotically}, a pigeonhole argument in $[n]^k$ shows that for every fixed $k$ the minimum
-imbalance grows like $n^3$. For $k=2$ the limit of $\min I/n^3$ exists, is attained by a permuton, and lies
-between $4/375$ and about $0.120$. Along the way we observe that perfect balance is an $\ell_1$-equilateral problem, so
+by up to \MaxGain\%, and matches the rest. A cheap invariant, the \emph{row group}, certifies
+that 32 of the 33 new rectangles are not isotopic to rows of any group table, and so lie
+outside the reach of earlier column-swapping local search.
+\emph{Exactly}, a branch and bound proves, with computer assistance, that the minimum imbalance
+of a $3\times 9$ rectangle is $56$, a value found by Díaz et al.\ whose optimality was open. A
+sharper pruning bound, read off the identity $I=2\sum(d-t)^+$, cuts the search tree by a
+factor of $2.4$ to $3.3$ on the instances we solve.
+\emph{Asymptotically}, for every fixed $k$ the minimum imbalance is $\Theta(n^3)$: a pigeonhole
+argument gives a lower constant of order $4^{-k}$, and random rectangles give an upper constant
+of order $\sqrt k$. For $k=2$ the limit of $\min I/n^3$ exists, is attained by a permuton, and lies
+between $4/375$ and $0.1196$. Perfect balance is an $\ell_1$-equilateral problem, so
 it forces $k=\Omega(n/\log n)$ rows.
 For $2\times n$ rectangles, single two-minute annealing runs improve five of the seven six-hour MIP
 upper bounds for $14\le n\le 20$.
@@ -86,59 +87,64 @@ perfect balance is then usually impossible, and asked instead for rectangles of 
 \emph{imbalance}. Since then the problem has driven work on SAT encodings that prove optima with checkable
 proof certificates~\citep{RamaswamySzeider2023}, mixed-integer programming~\citep{MirkaEtAl2023},
 streamliners written by large language models~\citep{VoborilRamaswamySzeider2025} and LLM agents
-that reformulate models~\citep{VoborilSzeider2026}, and balanced Latin squares have served as a
-test case for agentic neurosymbolic discovery~\citep{XiaEtAl2026}. The reference table
-of~\citet{VoborilRamaswamySzeider2025}, which collects the best values obtained by all of these
-approaches, is the starting point of this paper.
+that reformulate models~\citep{VoborilSzeider2026}. Closest to our work, \citet{XiaEtAl2026} use
+simulated annealing for spatially balanced Latin \emph{squares}, reaching the optimum for $n=10$
+and $n=13$ in under a second, and prove an $\Omega(n^2)$ lower bound on the imbalance of squares
+with $n\equiv1\pmod 3$ via a parity argument. The reference table
+of~\citet{VoborilRamaswamySzeider2025}, which collects the best values obtained for rectangles by
+the methods above, is the starting point of this paper. To our knowledge it is still current: the
+later work~\citep{VoborilSzeider2026} reports aggregate model comparisons but no per-instance
+values, and~\citep{XiaEtAl2026} treats squares only.
 
 Here is the point of view of this paper. Record, for each symbol $u$, the columns
 $c_1(u),\dots,c_k(u)$ that it occupies in the $k$ rows. This gives a point
 $x_u\in[n]^k$, and the distance between two symbols used throughout the literature is exactly
 the $\ell_1$ distance $\lVert x_u-x_v\rVert_1$. A balanced rectangle is therefore a set of $n$
 points in a $k$-dimensional grid that are pairwise \emph{equidistant} in the taxicab metric.
-The picture organises the whole paper. When $k$ is small compared with $n$, the grid is too
-crowded for equidistance, and \cref{sec:cubic} makes this quantitative. When $k=n$ there is
-room, consistent with the existence of balanced squares for infinitely many $n$. And it
-suggests a search that moves individual points, rather than one that rearranges a rigid
-algebraic pattern.
+When $k$ is small compared with $n$, the grid is too crowded for equidistance, and
+\cref{sec:cubic} makes this quantitative. When $k=n$ there is room, consistent with the existence
+of balanced squares for infinitely many $n$. The point picture also suggests a search that moves
+individual points, rather than one that rearranges a rigid algebraic pattern.
 
 \paragraph{Contributions.}
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-\item \textbf{A relaxed local search} (\cref{sec:search}). Rows are kept as permutations, the
+\item \textbf{New upper bounds} (\cref{sec:search,sec:results}). Rows are kept as permutations, the
 column condition becomes a penalty with an adaptive weight, and a move swaps two symbols
-within a row. A move is evaluated exactly in $O(n)$ time. Against the reference table of
+within a row, evaluated exactly in $O(n)$ time. Against the reference table of
 \citet{VoborilRamaswamySzeider2025}, the search improves \NumImproved{} of \NumCells{}
-instances and matches the other \NumMatched{} (\cref{sec:results}).
-
-\item \textbf{The row group} (\cref{sec:orbit}). We attach to each rectangle the permutation group
-generated by the ratios of its rows. Column operations leave this group unchanged, so local
-search that permutes columns of a cyclic rectangle~\citep{SmithGomesFernandez2005,DiazLeBrasGomes2017}
-stays among rectangles whose row group has order at most $n$. For 32 of our 33 improved
-rectangles the row group is the full alternating or symmetric group.
+instances and matches the other \NumMatched{}.
 
 \item \textbf{A new optimum} (\cref{sec:exact}). A branch and bound that places one symbol at a
-time proves that the known value $56$ is optimal for $3\times 9$, which was open, and independently reproduces the
-known optima for $2\times n$ with $n\le 11$ and for $3\times 8$ and $4\times 8$.
+time proves that the known value $56$ is optimal for $3\times 9$, which was open, and independently
+reproduces the known optima for $2\times n$ with $n\le 11$ and for $3\times 8$ and $4\times 8$.
+A second, independent implementation with a sharper bound confirms the $3\times9$, $3\times8$
+and $4\times8$ results.
 
-\item \textbf{A cubic law} (\cref{sec:cubic}). For every fixed $k$, the minimum imbalance is
-$\Theta(n^3)$, with the explicit lower constant $c_k=\max_m k\,m^{-k}(\frac13-\frac1m)$.
-Perfect balance also requires $n\le e(\ell_1^k)=O(k\log k)$, by a classical bound on
+\item \textbf{A certificate of novelty} (\cref{sec:orbit}). The permutation group generated by
+the ratios of the rows is unchanged by column operations and is small for rectangles taken from
+group tables. For 32 of our 33 improved rectangles it is the full alternating or symmetric
+group, so these rectangles cannot be reached by local search that only permutes the columns of a
+cyclic rectangle~\citep{DiazLeBrasGomes2017}. The invariant does not separate our rectangles from
+the SAT, MIP and streamliner records, most of which are also far from group tables.
+
+\item \textbf{Cubic growth} (\cref{sec:cubic}). For every fixed $k$, the minimum imbalance is
+$\Theta(n^3)$. The lower constant $c_k=\max_m k\,m^{-k}(\frac13-\frac1m)$ decays like $4^{-k}$,
+while random rectangles give an upper constant $D_k\le\sqrt k/(6\sqrt2)$; the right order in $k$
+is open. Perfect balance also requires $n\le e(\ell_1^k)=O(k\log k)$, by a classical bound on
 equilateral sets.
 
 \item \textbf{The case $k=2$} (\cref{sec:two}). On the open instances $14\le n\le 20$, a
 single-seed two-minute annealing run improves the six-hour upper bounds of \citet{MirkaEtAl2023} for
-$15\le n\le19$, ties at $n=14$ and is worse at $n=20$. Near-optimal
-$2\times n$ rectangles look like a few broken diagonals, and the normalised imbalance appears to
-stay near $0.11\,n^3$ up to $n=64$, which suggests a limit of about $0.12$. The limit exists and is the minimum of a continuous functional
-on permutons.
+$15\le n\le19$, ties at $n=14$ and is worse at $n=20$. The limit of $\min I/n^3$ exists and is the
+minimum of a continuous functional on permutons, which we bracket between $4/375$ and $0.1196$.
 \end{enumerate}
 
 None of the algorithmic ingredients is new by itself. Simulated
-annealing~\citep{KirkpatrickGelattVecchi1983}, row-preserving swaps with temporarily
+annealing~\citep{KirkpatrickGelattVecchi1983}, including for the square version of this
+problem~\citep{XiaEtAl2026}, row-preserving swaps with temporarily
 violated column constraints~\citep{ZhangMa2008,XieEtAl2024} and adaptive penalties
 (strategic oscillation~\citep{GloverHao2011}) are all established. What we add is their
-combination for this objective and the row-group explanation of why it reaches rectangles that
-earlier local search could not.
+combination for rectangles, the resulting records, and the exact and asymptotic results.
 
 \section{Preliminaries}\label{sec:prelim}
 
@@ -156,10 +162,11 @@ Each row contributes $\sum_{u<v}\abs{c_i(u)-c_i(v)}=\binom{n+1}{3}$ to the total
 $t$ is the \emph{average} distance over all $\binom n2$ pairs. In particular the deviations
 $d(u,v)-t$ sum to zero, and
 \begin{equation}\label{eq:half}
-  I(L)=2\sum_{u<v}\bigl(t-d(u,v)\bigr)^+ .
+  I(L)=2\sum_{u<v}\bigl(t-d(u,v)\bigr)^+=2\sum_{u<v}\bigl(d(u,v)-t\bigr)^+ .
 \end{equation}
-Imbalance is therefore caused by the pairs that are too close. This one-line identity is the
-engine of \cref{sec:cubic}. The quantity $3I$ is an integer, and as in the literature we write
+Imbalance is therefore caused by the pairs that are too close, and equally by the pairs that are
+too far. This identity drives both the pruning bound of \cref{sec:exact} and the lower bound of
+\cref{sec:cubic}. The quantity $3I$ is an integer, and as in the literature we write
 imbalances as $x.0$, $x.3$ and $x.6$ for $x$, $x+\frac13$ and $x+\frac23$.
 
 \paragraph{Two dictionaries.} A rectangle can be read through its rows or through its points.
@@ -167,8 +174,9 @@ Through its rows it is a $k$-tuple $(r_1,\dots,r_k)$ of bijections $r_i\colon[n]
 columns to symbols, with $r_i(j)\ne r_{i'}(j)$ for $i\ne i'$. Through its points it is a set
 $\{x_u\}$ in $[n]^k$ whose coordinate projections are bijections and in which every point has
 distinct coordinates. The column condition says exactly that.
-The imbalance is invariant under relabelling symbols and permuting rows, but not under
-permuting columns. Relabelling symbols, we may assume $r_1=\mathrm{id}$.
+The imbalance is invariant under relabelling symbols, permuting rows and reversing the order of
+the columns, $j\mapsto n+1-j$, which preserves every distance. It is not invariant under general
+column permutations. Relabelling symbols, we may assume $r_1=\mathrm{id}$.
 
 \begin{figure}[t]
 \centering
@@ -207,15 +215,16 @@ maintained in $O(1)$ per move with per-column counters. The search minimises $3I
 records only states with $V=0$. Every $2^{16}$ proposals the weight $W$ is multiplied by
 $1.02$ if the current state has conflicts and by $0.99$ otherwise, and it is kept in
 $[1,4n^2]$, starting from $W=k$. The search can therefore leave the Latin rectangles, pass through
-non-Latin states and come back. Moves that permute whole columns never leave the Latin
+non-Latin states and come back. By contrast, moves that permute whole columns never leave the Latin
 rectangles, and as \cref{sec:orbit} shows, they never change the row group.
 
 \paragraph{Schedule.} The search starts from the cyclic rectangle $r_i(j)=i+j \bmod n$. It accepts
 a move of change $\Delta$ with probability $\min(1,e^{-\Delta/T})$. The temperature starts at
 $T_0=2k$ (in units of $3I$), is multiplied by $0.9999995$ per proposal and never drops below
 $0.05$, which it reaches after about $10^7$ proposals. Most of a run is therefore a
-low-temperature walk on plateaus, punctuated by reheats. The search
-reheats after $4\cdot10^7$ proposals without improvement. Runs are single-threaded, and the
+low-temperature walk on plateaus. When $4\cdot10^7$ proposals have passed since the last
+improvement of the best Latin rectangle found so far, the temperature is reset to $T_0$. A proposal
+with $j_1=j_2$ is discarded and counted, without cooling. Runs are single-threaded, and the
 reported rectangle is re-evaluated from scratch. An independent checker, written from the
 definition with exact rational arithmetic, verifies every reported rectangle and
 reproduces all fourteen rectangles printed
@@ -227,31 +236,44 @@ We take the \NumCells{} non-square instances $8\le n\le13$, $2\le k\le n-1$ of T
 of~\citep{VoborilRamaswamySzeider2025}, which also collects the earlier records. All runs used an
 Apple M3 laptop, one core per run. Each instance received independent runs of 1 and 5 CPU
 minutes, and the larger instances ($k\ge4$, $n\ge9$) also a 10-minute run, for a total of at
-most 16 CPU minutes per instance.
-\Cref{tab:results} shows the outcome. The search improves \NumImproved{} values, matches
-\NumMatched{} and is worse on none. The mean improvement is \MeanGain\% and the largest is
-\MaxGain\% (\TopCell: \TopOld{}$\,\to\,$\TopNew). The search matches every record with $n=8$ or $k=2$, every record with $k=3$ except $3\times12$, and
+most 16 CPU minutes per instance. \Cref{tab:results} reports the best of these runs. Of the
+\NumImproved{} new values, 10 came first from the 1-minute run, 8 from the 5-minute run and 15
+from the 10-minute run.
+The search improves \NumImproved{} values, matches \NumMatched{} and is worse on none. The mean
+improvement is \MeanGain\% and the largest is \MaxGain\% (\TopCell: \TopOld{}$\,\to\,$\TopNew). The
+search matches every record with $n=8$ or $k=2$, every record with $k=3$ except $3\times12$, and
 the records for $4\times10$, $5\times10$ and $6\times12$. Several of these are proven
-optimal~\citep{RamaswamySzeider2023,MirkaEtAl2023}.
+optimal~\citep{RamaswamySzeider2023,MirkaEtAl2023}, so matching is the best possible there.
 
 \begin{table}[t]
 \centering
 \small
 \input{table.tex}
 \caption{Minimum known imbalance of $k\times n$ Latin rectangles. Bold: new value from this
-work, with the previous best value struck through below it. Previous values are those collected
-in Table~1 of~\citet{VoborilRamaswamySzeider2025}, which includes results of
-\citep{DiazLeBrasGomes2017,RamaswamySzeider2023} and of LLM-generated streamliners.
-Plain: a record that our search matches.}
+work (best of the 1-, 5- and 10-minute runs), with the previous best value struck through below it.
+Previous values are those collected in Table~1 of~\citet{VoborilRamaswamySzeider2025}, which
+includes results of \citep{DiazLeBrasGomes2017,RamaswamySzeider2023} and of LLM-generated
+streamliners. Plain: a record that our search matches.}
 \label{tab:results}
 \end{table}
 
+\paragraph{Variability.} Single runs are noisy. In 9 of the \NumImproved{} improved cells a longer
+run ended with a worse value than a shorter one, and across the three budgets the final values of
+a cell differ by a median of 5\% and at most 32.5\%. The values in \cref{tab:results} are
+therefore upper bounds from a few runs, not estimates of typical performance.
+
+\paragraph{Prior effort.} The previous values were obtained on different hardware, under
+different time limits, by methods that also aim at optimality proofs or at reusable model
+streamlining, not at the best upper bound for each instance. For example, the previous value
+$274.0$ for $12\times13$ is the single rectangle printed in Fig.~6h
+of~\citep{VoborilRamaswamySzeider2025}. The size of an improvement may therefore say more about the
+prior effort on a cell than about its difficulty.
+
 \paragraph{Speed.} We reran the search with \NumSeeds{} fresh seeds on every improved instance,
 stopping when it beat the record (\cref{fig:records}b). All \NumTimingRuns{} runs succeeded. The
-median time to beat the previous record (not to reach our final value) was \MedianBeat{} CPU seconds and the maximum \MaxBeat{} seconds. The earlier values
-were obtained on different hardware, under different time limits, by methods that also aim at
-optimality proofs or at reusable model streamlining. We therefore make no runtime comparison
-with them.
+median time to beat the previous record (not to reach our final value) was \MedianBeat{} CPU
+seconds and the maximum \MaxBeat{} seconds. For the reasons above we make no runtime comparison
+with earlier work.
 
 \begin{figure}[t]
 \centering
@@ -262,12 +284,100 @@ over \NumSeeds{} seeds, log scale.}
 \label{fig:records}
 \end{figure}
 
-\section{Why earlier local search stayed in the cyclic orbit}\label{sec:orbit}
+\section{Exact search and a new optimum}\label{sec:exact}
 
-\citet{DiazLeBrasGomes2017} note that their local search, which starts from a cyclic
-rectangle and permutes columns, ``never leaves its isotopic class''. We make this precise
-with an invariant that detects whether a rectangle can come from a group table. It is not a
-complete isotopy invariant.
+To complement the upper bounds, we wrote a branch and bound that decides whether a rectangle
+with $3I<\beta$ exists for a given bound $\beta$.
+
+\paragraph{Branching.} With $r_1=\mathrm{id}$ fixed, symbols are placed in the order $1,2,\dots,n$.
+Placing a symbol means choosing its column in each row $2,\dots,k$, subject to the Latin
+conditions. This loses nothing: relabelling symbols turns any rectangle into one with
+$r_1=\mathrm{id}$, and relabelling commutes with permuting rows $2,\dots,k$. Among those rows the
+columns of symbol $1$ are distinct, so a unique ordering makes them increase with the row index,
+and imbalance is invariant under both operations. When symbol $u$ is complete, the deviations
+$\abs{3d(u,v)-3t}$ for all $v<u$ are final and are added to the cost. We do not yet exploit the
+choice of which row is fixed to the identity, or the column reversal of \cref{sec:prelim}; together
+they offer up to another factor $2k$ of symmetry.
+
+\paragraph{Bounds.} Every unplaced row adds at least $1$ to any distance, because the two symbols
+occupy different columns, and at most $n-1$. So while a symbol is being placed, each pair
+$(u,v)$ with $v<u$ has a known \emph{overshoot} $o_{uv}=\bigl(3\,d_{\mathrm{part}}+3\rho-3t\bigr)^+$
+and a known \emph{shortfall} $s_{uv}=\bigl(3t-3\,d_{\mathrm{part}}-3\rho(n-1)\bigr)^+$, where
+$d_{\mathrm{part}}$ is the distance over the rows placed so far and $\rho$ the number of rows still
+to place. Let $P$ and $N$ be the sums of the positive and negative parts of the final deviations
+$3d-3t$, so that the cost so far is $P+N$. By~\eqref{eq:half}, $3I=2\sum(3d-3t)^+=2\sum(3d-3t)^-$,
+so each of
+\[
+  P+N+\sum o_{uv}+\sum s_{uv},\qquad 2\Bigl(P+\sum o_{uv}\Bigr),\qquad 2\Bigl(N+\sum s_{uv}\Bigr)
+\]
+is a lower bound on $3I$, and the node is pruned when their maximum reaches $\beta$. The first
+version of our program used only $P+N+\sum o_{uv}$; the other two terms cost a few additions per
+node. When a symbol is completed, every pair that is not yet final also contributes at
+least $m_0=\min(3t\bmod 3,\,3-3t\bmod 3)$ to $3I$; for $3\times n$ and $4\times 8$ we have $m_0=0$.
+Running with $\beta$ equal to three times the value of our rectangle either finds a better
+rectangle or proves that none exists.
+
+\begin{theorem}[computer-assisted]\label{thm:3x9}
+The minimum imbalance of a $3\times 9$ Latin rectangle is $56$.
+\end{theorem}
+
+\noindent The upper bound is the rectangle of \cref{fig:optimum}. With the first bound, the branch
+and bound explores $5.5\cdot10^9$ nodes in $140$ CPU seconds and finds no rectangle with $I<56$.
+Run with $\beta=169$ instead, it finds a rectangle of value $56$, as a sanity check. The value
+$56$ itself was already found by~\citet{DiazLeBrasGomes2017}. To our knowledge its optimality
+was not known: it is not proven there, and it is listed as unproven in Table~1
+of~\citep{VoborilRamaswamySzeider2025}.
+
+\paragraph{A second implementation.} To reduce the dependence on a single program, the result was
+re-derived with a second implementation written independently from the description above, with
+the sharper bound. It explores the same tree as the first when restricted to the first bound
+($7.77\cdot10^7$ against $7.8\cdot10^7$ nodes for $3\times 8$, $5.48\cdot10^9$ against $5.5\cdot10^9$ for
+$3\times9$), and with the sharper bound it confirms all three results with $2.4$ to $3.3$ times
+fewer nodes (\cref{tab:exact}). Both programs share the branching scheme, so this guards against
+coding errors but not against an error in the scheme itself.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+instance & optimum $I$ & nodes, first bound & CPU time & nodes, sharper & before this work \\
+\midrule
+$2\times n$, $n\le 11$ & see \cref{fig:cubic} & $\le 3.8\cdot10^7$ & $\le 1.1$\,s & $\le 2.6\cdot10^7$ ($n\ge10$) & proven \citep{DiazLeBrasGomes2017,MirkaEtAl2023} \\
+$3\times 8$ & 36.0 & $7.8\cdot10^7$ & 1.9\,s & $3.2\cdot10^7$ & proven \citep{DiazLeBrasGomes2017,RamaswamySzeider2023} \\
+$4\times 8$ & 32.0 & $1.9\cdot10^{10}$ & 477\,s & $5.7\cdot10^9$ & proven \citep{VoborilRamaswamySzeider2025} \\
+$3\times 9$ & \textbf{56.0} & $5.5\cdot10^9$ & 140\,s & $2.1\cdot10^9$ & \textbf{open} \\
+\midrule
+$5,6,7\times 8$;\ $4$--$8\times 9$ & --- & --- & $>1800$\,s & --- & open (undecided) \\
+\bottomrule
+\end{tabular}
+\caption{Exact branch and bound, single core. Each run proves that no rectangle beats our upper
+bound. The sharper-bound node counts are from the second implementation; its CPU times were measured
+on a shared machine and are omitted. On all small instances with $n\le7$ and $k\le4$ the first
+program also reproduces the values reported in~\citep{DiazLeBrasGomes2017}.}
+\label{tab:exact}
+\end{table}
+
+\Cref{tab:exact} summarises the runs. The method is deliberately plain: no symmetry beyond row
+order and symbol relabelling, and no learned bounds. With a 30-minute cap per instance and the first
+bound, the remaining open instances with $n\in\{8,9\}$ stay undecided. Unlike
+the DRAT proofs of~\citep{RamaswamySzeider2023}, our search does not emit a checkable
+certificate. \Cref{thm:3x9} therefore rests on the correctness of two short programs. The
+first, which we publish, reproduces all the known optima listed above; the second reproduces those
+for $2\times10$, $2\times11$, $3\times8$ and $4\times8$. A certificate in the style
+of~\citep{RamaswamySzeider2023} is the natural next step, and the overshoot and shortfall bounds
+may be worth encoding there as redundant constraints.
+
+\section{A certificate that the new rectangles are not group-based}\label{sec:orbit}
+
+\citet{DiazLeBrasGomes2017} start their local search from $k$ random rows of the cyclic Latin square,
+repeatedly swap two random columns, keep a swap only when it lowers the imbalance, and restart
+with fresh rows; they note that the method \textquotedblleft never leaves its isotopic class\textquotedblright. Permuting columns
+preserves the isotopy class by definition. The question is how to see that a given rectangle lies
+outside every such class. We give an invariant that is cheap to compute and detects whether a
+rectangle can come from a group table. It is not a complete isotopy invariant, and it does not by
+itself explain why one search outperforms another.
 
 \begin{definition}
 The \emph{row group} of a Latin rectangle with rows $r_1,\dots,r_k$ is the permutation group on
@@ -279,7 +389,9 @@ symbols
 
 The element $r_i\circ r_j^{-1}$ sends the symbol in column $c$ of row $j$ to the symbol in column
 $c$ of row $i$. Since $r_i r_j^{-1}=(r_ir_1^{-1})(r_jr_1^{-1})^{-1}$, the group is already
-generated by the $k-1$ ratios $r_ir_1^{-1}$.
+generated by the $k-1$ ratios $r_ir_1^{-1}$. In particular, for $k=2$ the row group is the cyclic
+group generated by $r_2r_1^{-1}$, so it carries no information beyond the cycle type of one
+permutation.
 
 \begin{proposition}\label{prop:rowgroup}
 \leavevmode
@@ -291,9 +403,7 @@ class of $\row(L)$ is an isotopy invariant.
 $\row(L)$ is conjugate to a subgroup of the left-regular representation of $G$. In particular
 it acts semiregularly and $\abs{\row(L)}$ divides $n$.
 \item For $i\ne1$, a swap in row $i$ left-multiplies $r_ir_1^{-1}$ by a transposition and fixes
-the other generators. A single swap
-can therefore enlarge the row group. Starting from a cyclic rectangle, swaps do reach
-rectangles with $\row(L)=\Sym_n$, as the data below show.
+the other generators. A single swap can therefore enlarge the row group.
 \end{enumerate}
 \end{proposition}
 
@@ -306,15 +416,14 @@ $g$. (iii)~Swapping two symbols in row $i$ replaces $r_i$ by $\tau r_i$ for a tr
 $\tau$.
 \end{proof}
 
-So any search whose moves permute columns, or that selects rows from a cyclic Latin square, stays
-among rectangles whose row group is cyclic of order dividing $n$. \Cref{fig:rowgroups} shows
-the row groups of the best rectangles we found. Of the \NumImproved{} improved rectangles, 29
-have row group $\Sym_n$ and 3 have $\Alt_n$. These are the largest possible groups, as for most random tuples of
-permutations~\citep{Dixon1969}, so the
-rectangles are as far from any group table as they can be. The exception, $5\times 12$, has a
-row group of order $46080=2^6\cdot 6!$, the full centraliser $\Sym_2\wr\Sym_6$ of the pairing
-$u\leftrightarrow 13-u$ of
-symbols, a mirror symmetry that also appears in the published $4\times12$ and $5\times12$
+So any search whose moves permute columns, starting from rows of a cyclic Latin square, stays
+among rectangles whose row group is cyclic of order dividing $n$. \Cref{fig:rowgroups} shows the row groups of the best rectangles we
+found. Of the \NumImproved{} improved rectangles, 29 have row group $\Sym_n$ and 3 have $\Alt_n$
+($5\times9$, $8\times9$ and $3\times12$). Such rectangles are therefore not isotopic to rows of any
+group table, and in particular unreachable for the column-swapping search
+of~\citep{DiazLeBrasGomes2017}. The exception, $5\times 12$, has a row group of order
+$46080=2^6\cdot 6!$, the full centraliser $\Sym_2\wr\Sym_6$ of the pairing $u\leftrightarrow 13-u$
+of symbols, a mirror symmetry that also appears in the published $4\times12$ and $5\times12$
 records.
 
 \begin{figure}[t]
@@ -322,83 +431,19 @@ records.
 \includegraphics[width=0.92\linewidth]{figures/rowgroups.pdf}
 \caption{Row groups of our best rectangles in the benchmark range. Shading shows the improvement
 over the previous best value, and grey cells are matched records. Each label gives the row group: $\Sym_n$ or
-$\Alt_n$, otherwise its order. Small row groups occur only among matched records.}
+$\Alt_n$, otherwise its order. For $k=2$ the row group is always cyclic, so the small groups at
+$k=2$ are forced and say nothing about the search.}
 \label{fig:rowgroups}
 \end{figure}
 
-\paragraph{What this does and does not explain.} The row group explains why rectangles like ours
-are unreachable for column-based local search. It does not explain why annealing finds better upper bounds than those reported by the exact
-solvers. The SAT and MIP records are also non-cyclic: ten of the fourteen published
-rectangles have row group $\Sym_n$. Those methods pursue different goals, proving optimality or learning reusable streamliners, and
-we have not isolated which ingredient of our search matters. One plausible factor is
-throughput: a move
-costs $O(n)$, and the search makes hundreds of millions of them.
+\paragraph{What this does and does not show.} The row group certifies that our rectangles are
+unreachable for column-based local search. It does not explain why annealing finds better upper
+bounds than those reported by the exact solvers and streamliners, which supply most of the records we
+improve: ten of the fourteen published SAT, MIP and streamliner rectangles also have row group
+$\Sym_n$. Those methods pursue different goals, proving optimality or learning reusable
+streamliners, and we have not isolated which ingredient of our search matters.
 
-\section{Exact search and a new optimum}\label{sec:exact}
-
-To complement the upper bounds, we wrote a branch and bound that decides whether a rectangle
-with $3I<B$ exists for a given bound $B$.
-
-\paragraph{Branching.} With $r_1=\mathrm{id}$ fixed, symbols are placed in the order $1,2,\dots,n$.
-Placing a symbol means choosing its column in each row $2,\dots,k$, subject to the Latin
-conditions. This loses nothing: relabelling symbols turns any rectangle into one with
-$r_1=\mathrm{id}$, and relabelling commutes with permuting rows $2,\dots,k$. Among those rows the
-columns of symbol $1$ are distinct, so a unique ordering makes them increase with the row index,
-and imbalance is invariant under both operations. When symbol $u$ is complete, the deviations $\abs{3d(u,v)-3t}$ for all $v<u$ are final
-and are added to the cost.
-
-\paragraph{Bounds.} Two lower bounds prune the tree. First, every unplaced row adds at least $1$
-to any distance, because the two symbols occupy different columns. So while a symbol is being
-placed, a partial distance that exceeds $t$ even after adding $1$ for each remaining row
-contributes a known overshoot, and the node is pruned when the cost so far plus this overshoot
-reaches $B$. Second, when a symbol is completed, every pair that is not yet final contributes at
-least $m_0=\min(3t\bmod 3,\,3-3t\bmod 3)$ to $3I$, and the node is pruned when the cost plus
-$m_0$ times the number of such pairs reaches $B$. For $3\times n$ and $4\times 8$ we have $m_0=0$,
-so there the overshoot bound does all the work. Running with $B$ equal to the value of our
-rectangle either finds a better rectangle or proves that none exists.
-
-\begin{theorem}\label{thm:3x9}
-The minimum imbalance of a $3\times 9$ Latin rectangle is $56$.
-\end{theorem}
-
-\noindent The upper bound is the rectangle of \cref{fig:optimum}. The branch and bound
-explores $5.5\cdot10^9$ nodes in $140$ CPU seconds and finds no rectangle with $I<56$. Run with
-the bound $3I<169$ instead, it finds a rectangle of value $56$, as a sanity check. The value
-$56$ itself was already found by~\citet{DiazLeBrasGomes2017}. To our knowledge its optimality
-was not known: it is listed as unproven there and in Table~1
-of~\citep{VoborilRamaswamySzeider2025}.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{@{}lrrrl@{}}
-\toprule
-instance & optimum $I$ & nodes & CPU time & status before this work \\
-\midrule
-$2\times n$, $n\le 11$ & see \cref{fig:cubic} & $\le 3.8\cdot10^7$ & $\le 1.1$\,s & proven \citep{DiazLeBrasGomes2017,MirkaEtAl2023} \\
-$3\times 8$ & 36.0 & $7.8\cdot10^7$ & 1.9\,s & proven \citep{DiazLeBrasGomes2017,RamaswamySzeider2023} \\
-$4\times 8$ & 32.0 & $1.9\cdot10^{10}$ & 477\,s & proven \citep{VoborilRamaswamySzeider2025} \\
-$3\times 9$ & \textbf{56.0} & $5.5\cdot10^9$ & 140\,s & \textbf{open} \\
-\midrule
-$5,6,7\times 8$;\ $4$--$8\times 9$ & --- & --- & $>1800$\,s & open (undecided) \\
-\bottomrule
-\end{tabular}
-\caption{Exact branch and bound, single core. Each run proves that no rectangle beats our upper
-bound. On all small instances with $n\le7$ and $k\le4$ it also reproduces the values reported
-in~\citep{DiazLeBrasGomes2017}.}
-\label{tab:exact}
-\end{table}
-
-\Cref{tab:exact} summarises the runs. The method is deliberately plain: no symmetry beyond row
-order and symbol relabelling, and no learned bounds. It reaches its limit quickly. With a
-30-minute cap per instance, the remaining open instances with $n\in\{8,9\}$ stay undecided. Unlike
-the DRAT proofs of~\citep{RamaswamySzeider2023}, our search does not emit a checkable
-certificate. \Cref{thm:3x9} therefore rests on the correctness of a short program, which we
-publish and validated on all the known optima listed above. A DRAT certificate in the style
-of~\citep{RamaswamySzeider2023} is the natural next step. The overshoot bound used for pruning
-may also be worth encoding there as a redundant constraint.
-
-\section{The cubic law}\label{sec:cubic}
+\section{Cubic growth for a fixed number of rows}\label{sec:cubic}
 
 Why does imbalance grow so quickly with $n$ (\cref{tab:results}), and why can squares be perfectly
 balanced? The point picture gives a short answer. For fixed $k$, there is not enough room in
@@ -406,65 +451,102 @@ $[n]^k$ for $n$ points that are pairwise far apart.
 
 \begin{theorem}\label{thm:cubic}
 Let $L$ be a $k\times n$ Latin rectangle and $s\ge 1$ an integer, and put
-$B=\ceil{n/s}^k$. Then
+$M=\ceil{n/s}^k$. Then
 \[
-  I(L)\ \ge\ n\Bigl(\frac nB-1\Bigr)\Bigl(\frac{k(n+1)}3-k(s-1)\Bigr)
+  I(L)\ \ge\ n\Bigl(\frac nM-1\Bigr)\Bigl(\frac{k(n+1)}3-k(s-1)\Bigr)
 \]
 whenever both brackets are positive. Consequently, for every fixed $k$,
 \[
-  c_k\ \le\ \liminf_{n\to\infty}\frac{\min I}{n^3}\ \le\ \limsup_{n\to\infty}\frac{\min I}{n^3}\ \le\ \frac k3,
+  c_k\ \le\ \liminf_{n\to\infty}\frac{\min I}{n^3}\ \le\ \limsup_{n\to\infty}\frac{\min I}{n^3}\ \le\ D_k,
   \qquad
-  c_k=\max_{m\ge 4}\ \frac{k}{m^k}\Bigl(\frac13-\frac1m\Bigr)>0 .
+  c_k=\max_{m\ge 4}\ \frac{k}{m^k}\Bigl(\frac13-\frac1m\Bigr)>0 ,
 \]
+where $D_k$ is the constant of \cref{prop:random}.
 \end{theorem}
 
 \begin{proof}
 Cut each axis of $[n]^k$ into $\ceil{n/s}$ intervals of at most $s$ consecutive values. This
-cuts the grid into $B$ boxes. Two points in the same box differ by at most $s-1$ in every
+cuts the grid into $M$ boxes. Two points in the same box differ by at most $s-1$ in every
 coordinate, so their distance is at most $k(s-1)<t$. If box $b$ holds $m_b$ of the $n$ points,
 convexity gives
 \[
-  \sum_b\binom{m_b}{2}\ \ge\ B\binom{n/B}{2}=\frac n2\Bigl(\frac nB-1\Bigr)
+  \sum_b\binom{m_b}{2}\ \ge\ M\binom{n/M}{2}=\frac n2\Bigl(\frac nM-1\Bigr)
 \]
 pairs that share a box. Each of them has $t-d\ge t-k(s-1)$. Inserting this
-into~\eqref{eq:half} proves the first claim. For the second, take $s=\ceil{n/m}$ for a
-fixed $m$. Then $B\le m^k$ and $s-1<n/m$, and the bound becomes
-$k\,m^{-k}(\frac13-\frac1m)\,n^3-O(n^2)$. For the upper bound, $k\le d\le k(n-1)$ gives
-$\abs{d-t}\le\frac{2k(n-2)}3$, and $\binom n2\cdot\frac{2kn}{3}\le\frac{k n^3}{3}$.
+into~\eqref{eq:half} proves the first claim. For the lower limit, take $s=\ceil{n/m}$ for a
+fixed $m$. Then $M\le m^k$ and $s-1<n/m$, and the bound becomes
+$k\,m^{-k}(\frac13-\frac1m)\,n^3-O(n^2)$. The upper limit is \cref{prop:random}.
 \end{proof}
 
-The proof is a pigeonhole argument, and \cref{fig:geometry}a shows it at work. Clustered points
-are expensive, and in a low-dimensional grid clustering is unavoidable. Three remarks put the
-theorem in context.
+\begin{proposition}\label{prop:random}
+Let $U_1,U_1',\dots,U_k,U_k'$ be independent and uniform on $[0,1]$, put
+$S_k=\sum_{i=1}^k\abs{U_i-U_i'}$ and $D_k=\frac12\,\mathbb E\abs{S_k-\frac k3}$. Then for every fixed
+$k$, $\min I(k\times n)\le D_k\,n^3+O(n^2)$, and
+\[
+  D_k\ \le\ \tfrac12\sqrt{\operatorname{Var}S_k}\ =\ \frac{\sqrt k}{6\sqrt2}.
+\]
+\end{proposition}
 
-\begin{remark}[Constants]
-For $k=2$ the maximum is attained at $m=5$, giving $c_2=4/375\approx0.0107$. For $k\ge3$,
-$c_k=k/(12\cdot4^k)$, attained at $m=4$. In the benchmark range the finite-$n$ bound is weak: for $2\times13$
-it gives $7.7$, against the true optimum $218.6$, and for $k=3$ it becomes positive only at
-$n=28$. Its message is asymptotic. Even the \emph{average} deviation per pair, $I/\binom n2$, grows linearly in $n$, the
-same order as the target $t$ itself. For fixed $k$, rectangles are not merely imperfect but
-\emph{uniformly} imperfect.
+\begin{proof}
+Choose $r_1,\dots,r_k$ independently and uniformly from $\Sym_n$, ignoring the column condition.
+For a fixed pair $u\ne v$ the pairs $(c_i(u),c_i(v))$ are independent across $i$ and uniform over
+ordered pairs of distinct columns. Realise them as $\ceil{nU_i}$ and $\ceil{nU_i'}$ conditioned on
+being distinct, an event of probability $1-1/n$; this changes each coordinate difference by less
+than $1$ and the law of $S_k$ by $O(1/n)$ in total variation, which gives $\mathbb E\abs{d(u,v)-t}=n\,\mathbb E\abs{S_k-\frac k3}+O(k)$,
+because $t-\frac{kn}3=\frac k3$. Summing over the $\binom n2$ pairs, $\mathbb E\,I=D_kn^3+O(n^2)$.
+The number $V$ of column clashes has $\mathbb E V=\sum_{i<i'}\mathbb E\,\mathrm{fix}(r_i^{-1}r_{i'})=\binom k2$.
+Choose an outcome with $I+4kn\,V\le\mathbb E[I+4kn\,V]=D_kn^3+O(n^2)$.
+
+Now repair the clashes one at a time. If symbol $a$ sits in column $j$ of row $i$ and also of
+another row, swap it with the symbol $b$ in a column $j'$ of row $i$ with $1\le\abs{j-j'}\le2k$
+such that $a$ does not occur in column $j'$ and $b$ does not occur in column $j$ in the other rows.
+At most $2k-2$ columns are excluded, so such a $j'$ exists once $n\ge4k$. The swap removes the clash
+of $a$, creates none, and changes at most $2(n-2)$ distances by at most $2k$ each, so it changes $I$
+by at most $4kn$. After at most $V$ swaps the rectangle is Latin, with $I\le D_kn^3+O(n^2)$. Finally,
+$\mathbb E S_k=\frac k3$ and $\operatorname{Var}\abs{U-U'}=\frac16-\frac19=\frac1{18}$, so the
+Cauchy--Schwarz inequality gives $\mathbb E\abs{S_k-\frac k3}\le\sqrt{k/18}$.
+\end{proof}
+
+The proof of \cref{thm:cubic} is a pigeonhole argument, and \cref{fig:geometry}a shows it at work.
+Clustered points are expensive, and in a low-dimensional grid clustering is unavoidable. Three
+remarks put the theorem in context.
+
+\begin{remark}[Constants]\label{rem:constants}
+For $k=2$ the lower maximum is attained at $m=5$, giving $c_2=4/375\approx0.0107$, and
+$D_2=496/3645\approx0.1361$, the value for a uniformly random derangement. For $k\ge3$,
+$c_k=k/(12\cdot4^k)$, attained at $m=4$, while numerically $D_k\approx0.094\sqrt k$ for large $k$
+(for example $D_3\approx0.165$ and $D_{12}\approx0.327$). So the lower constant decays
+exponentially in $k$ and the upper one grows like $\sqrt k$; we do not know the right order in $k$.
+In the benchmark range the finite-$n$ lower bound is weak: for $2\times13$ it gives $7.7$, against
+the true optimum $218.6$, and for $k=3$ it becomes positive only at $n=28$. Its message is
+asymptotic: for fixed $k$ the average deviation per pair, $I/\binom n2$, grows linearly in $n$, the
+same order as the target $t$ itself, so rectangles are imperfect on average at the scale of $t$.
 \end{remark}
 
 \begin{remark}[Squares]
 The bound is useless when $k$ grows with $n$, and it must be, because spatially balanced Latin
 squares exist, for instance whenever $2n+1$ is prime, by a construction that was itself
-discovered through streamlined search~\citep{LeBrasGomesSelman2012}. In $[n]^n$ there is room for $n$ equidistant points.
+discovered through streamlined search~\citep{LeBrasGomesSelman2012}. In $[n]^n$ there is room for
+$n$ equidistant points. For squares with $n\equiv1\pmod3$, where perfect balance is impossible,
+\citet{XiaEtAl2026} prove $I\ge4n(n-1)/9$, an order $n^2$ rather than $n^3$. How the minimum
+imbalance passes from order $n^3$ at fixed $k$ to order at most $n^2$ at $k=n$ is the natural
+question the point picture raises, and we leave it open.
 \end{remark}
 
 \begin{remark}[Equilateral sets]\label{rem:equilateral}
-A perfectly balanced rectangle is a set of $n$ points in $\R^k$ that are pairwise equidistant in
-$\ell_1$, an \emph{equilateral set} of $\ell_1^k$. Hence $n\le e(\ell_1^k)$, the largest size of
-such a set. Kusner conjectured $e(\ell_1^k)=2k$, which is known for
-$k\le4$ (the case $k=4$ is due to \citet{KoolenLaurentSchrijver2000}; see~\citep{Swanepoel2004}),
-and \citet{AlonPudlak2003} proved
-$e(\ell_1^k)=O(k\log k)$ in general (see also the survey~\citep{Swanepoel2004}). So a perfectly
-balanced $k\times n$ rectangle needs $k=\Omega(n/\log n)$ rows. For $k\le4$ this gives
+A perfectly balanced rectangle needs $3\mid k(n+1)$, so that $t$ is an integer, and it is a set of
+$n$ points in $\R^k$ that are pairwise equidistant in $\ell_1$, an \emph{equilateral set} of
+$\ell_1^k$. Hence $n\le e(\ell_1^k)$, the largest size of such a set. Kusner conjectured
+$e(\ell_1^k)=2k$, which is known for $k\le4$ (the case $k=4$ is due
+to \citet{KoolenLaurentSchrijver2000}; see~\citep{Swanepoel2004}), and \citet{AlonPudlak2003}
+proved $e(\ell_1^k)=O(k\log k)$ in general (see also the survey~\citep{Swanepoel2004}). So a
+perfectly balanced $k\times n$ rectangle needs $k=\Omega(n/\log n)$ rows. For $k\le4$ this gives
 $n\le2k$, which recovers part of the case analysis of~\citet{DiazLeBrasGomes2017}. Their
 arguments are sharper for $k\le 3$, and their bound $k\ge 6-18/(n+1)$ coincides with ours at
-$k=4$, while theirs is vacuous for $k\ge6$. The point sets of rectangles are far more special than general equilateral sets, since
-their coordinate projections are bijections onto $[n]$, so we do not expect these bounds to be
-tight. We have not seen this connection made in the literature on balanced designs.
+$k=4$, while theirs is vacuous for $k\ge6$. The point sets of rectangles are far more special than
+general equilateral sets, since their coordinate projections are bijections onto $[n]$, so we do
+not expect these bounds to be tight. We have not seen this connection made in the literature on
+balanced designs.
 \end{remark}
 
 \section{Two rows}\label{sec:two}
@@ -476,7 +558,8 @@ hours. \Cref{tab:two} adds our two-minute annealing runs. They improve the upper
 $15\le n\le 19$, tie at $n=14$ and lose at $n=20$, where the best bound of~\citep{MirkaEtAl2023}
 came from eight parallel six-hour runs. These are single runs with one seed, the improvements are
 small ($0.2$--$2\%$), and the MIP also spends its time on lower bounds, so the comparison shows
-only that annealing is a strong source of incumbents. The lower bounds remain far away, and we have not attempted to improve them.
+only that annealing is a strong source of incumbents. The lower bounds remain far away, and we have
+not attempted to improve them.
 
 \begin{table}[t]
 \centering
@@ -506,7 +589,7 @@ points.}
 \includegraphics[width=0.9\linewidth]{figures/cubic.pdf}
 \caption{Normalised imbalance $I/n^3$ for $k=2$. Black: proven optima. Grey: interval between
 the best lower and upper bounds of~\citep{MirkaEtAl2023}. Blue dots: our annealing values; blue dashes: $C(\mu_\sigma)$ for our $2\times64$ rectangle,
-an upper estimate for the limit (\cref{prop:limit}). Red:
+an upper bound for the limit (\cref{prop:limit}). Red:
 \cref{thm:cubic} at each $n$ (solid) and its limit $c_2$ (dashed). A uniformly random
 derangement has $I/n^3\to0.1361$ (dotted).}
 \label{fig:cubic}
@@ -530,57 +613,76 @@ For $k=2$, $\min I/n^3$ converges as $n\to\infty$ to $\min_\mu C(\mu)$, where th
 permutons is attained.
 \end{proposition}
 
-\begin{proof}[Proof sketch]
-The integrand is bounded and continuous on $[0,1]^4$, so $C$ is continuous for the weak topology.
-Permutons form a compact set, so the minimum is attained. For any permutation $\sigma$, comparing the sum defining $I$ with the integral defining $C(\mu_\sigma)$ cell by cell (the $n$
-diagonal cells, absent from $I$, have total weight $1/n$)
-gives $I/n^3=C(\mu_\sigma)+O(1/n)$, because the integrand is Lipschitz and $t/n\to\frac23$.
-This yields $\liminf\min I/n^3\ge\min C$. Conversely, permutations $\sigma_n$ with
-$\mu_{\sigma_n}\to\mu$ exist for every permuton $\mu$ (sample $n$ points from $\mu$; see~\citep{HoppenEtAl2013}). Removing
-fixed points by swapping each with an adjacent column, which never creates a new fixed point,
-changes $I$ by $O(n)$ per fixed point, so by
-$O(n^2)$ in total, which gives the matching upper bound.
+\begin{proof}
+Let $f(x,y,x',y')=\bigl|\abs{x-x'}+\abs{y-y'}-\frac23\bigr|$, which is bounded and $2$-Lipschitz
+on $[0,1]^4$. If $\mu_n\to\mu$ weakly then $\mu_n\otimes\mu_n\to\mu\otimes\mu$ weakly, so $C$ is
+continuous. Permutons form a weakly closed subset of the compact space of probability measures on
+$[0,1]^2$, so $C$ attains its minimum.
+
+Fix a permutation $\sigma$ of $[n]$ without fixed points, viewed as a $2\times n$ rectangle. Write
+$I(\sigma)/n^3=\frac1{2n^2}\sum_{u\ne v}\abs{d(u,v)/n-t/n}$. Each ordered pair $u\ne v$ corresponds to
+a pair of cells of $\mu_\sigma\otimes\mu_\sigma$ of weight $1/n^2$; within these cells $f$ differs
+from $\abs{d(u,v)/n-\frac23}$ by at most $4/n$, and $\abs{t/n-\frac23}=\frac2{3n}$. The $n$
+diagonal cell pairs carry total weight $1/n$ and are absent from $I$. Hence
+$\abs{I(\sigma)/n^3-C(\mu_\sigma)}\le A/n$ for an absolute constant $A$, uniformly in $\sigma$.
+This gives $\min I/n^3\ge\min_\mu C(\mu)-A/n$.
+
+Conversely, let $\mu^\ast$ attain the minimum. Sampling $n$ independent points from $\mu^\ast$ and
+taking the induced permutation gives permutations $\sigma_n$ with $\mu_{\sigma_n}\to\mu^\ast$
+almost surely~\citep{HoppenEtAl2013}. Remove the fixed points of $\sigma_n$ one at a time: if
+$\sigma(j)=j$, exchange the values at $j$ and $j'$, where $j'=j+1$ for $j<n$ and $j'=n-1$ for
+$j=n$. Then $\sigma(j)$ becomes $\sigma(j')\ne j$ and $\sigma(j')$ becomes $j\ne j'$, so no new
+fixed point is created. Each exchange moves two points by one cell, so it changes $I$ by at most
+$4n$, and there are at most $n$ of them. The resulting derangements $\tau_n$ satisfy
+$I(\tau_n)/n^3\le C(\mu_{\sigma_n})+O(1/n)\to C(\mu^\ast)$.
 \end{proof}
 
 The uniform permuton gives $C=496/3645\approx0.1361$, the limit for a random derangement, and the
 diagonal (the cyclic rectangle) gives $16/81\approx0.198$. Optimising numerically over permutons
 made of $m$ increasing or decreasing segments gives $0.148$, $0.133$ and $0.124$ for $m=3,4,5$.
-The permuton of our $2\times64$ rectangle does better, with $C(\mu_\sigma)\approx0.120$ by numerical
-quadrature, and this is our best estimate from above for the limit. The finite values
-$I/n^3\approx0.11$ in \cref{fig:cubic} lie below it mainly because the diagonal cells add a
-positive $O(1/n)$ term to $C(\mu_\sigma)$, so as estimates of the limit
-they are biased low by roughly $c/n$.
+The permuton of our $2\times64$ rectangle does better: by a midpoint rule on each pair of cells,
+stable to $10^{-7}$ under refinement, $C(\mu_\sigma)=0.11957$, and this is our best upper bound for
+the limit. The rectangle itself has $I=29988$, so $I/n^3=0.11440$. The difference $0.00517$ is almost
+entirely the diagonal cells: they contribute $\frac1{3n}-\frac1{3n^2}=0.00513$ to $C(\mu_\sigma)$,
+and the remaining $0.00005$ comes from the within-cell smoothing and from $t/n\ne\frac23$. The finite
+values $I/n^3\approx0.11$ in \cref{fig:cubic} therefore lie below the limit estimate by about
+$1/(3n)$.
 
 \begin{question}
 What is $\lim_n\min I(2\times n)/n^3=\min_\mu C(\mu)$? We know only that it lies between
-$4/375\approx0.011$ and about $0.120$. Is the minimiser unique, and is it a finite union of
+$4/375\approx0.011$ and $0.1196$. Is the minimiser unique, and is it a finite union of
 segments?
 \end{question}
 
 \section{Discussion}
 
-The three parts of this paper inform one another. The point picture says that balance is a
-packing problem in $\ell_1$, so moving points is the natural move. The row group says that moves
-which only shuffle columns cannot leave a cyclic orbit, while within-row swaps can reach rectangles
-whose row group is all of $\Sym_n$. The cubic law gives the right scale. Imbalance is not a
-small defect that clever search will remove, but a quantity of order $n^3$ whose leading
-constant is the real object of study.
+The point picture says that balance is a packing problem in $\ell_1$, so moving points is the
+natural move, and it gives the right scale: for a fixed number of rows, imbalance is not a small
+defect that clever search will remove, but a quantity of order $n^3$ whose leading constant is
+the real object of study. The row group adds a cheap check that a rectangle is not built from a
+group table.
 
-\paragraph{Limitations.} The new upper bounds come from one run per instance and budget, so
-the search is not a controlled experiment. We did not isolate the effect of the adaptive penalty
-or rerun earlier local search head-to-head. We make no runtime comparison with earlier work. The
-optimality of $3\times 9$ rests on an uncertified program. Our lower-bound theorem is far from
-the observed values for $k=2$ and is negligible in the benchmark range.
+\paragraph{Limitations.} The new upper bounds are best-of-runs from at most three runs per
+instance, and single runs vary by up to a third (\cref{sec:results}). We have not yet isolated
+the effect of the adaptive penalty or rerun earlier local search head-to-head, and we make no
+runtime comparison with earlier work. The optimality of $3\times 9$ rests on two uncertified programs
+that share a branching scheme. Our lower-bound constant is far from the observed values for $k=2$
+and is negligible in the benchmark range.
 
 \paragraph{Open problems.} (1)~Certify \cref{thm:3x9}, for instance with a DRAT-producing SAT
-encoding as in~\citep{RamaswamySzeider2023}, and settle $5\times8$ to $7\times8$. Our new upper
-bounds are natural starting incumbents for certified solvers, and the mirror pairing
+encoding as in~\citep{RamaswamySzeider2023}, and settle $5\times8$ to $7\times8$; the sharper bound
+and the unused column-reversal and row symmetries of \cref{sec:exact} are natural first steps. Our
+new upper bounds are natural starting incumbents for certified solvers, and the mirror pairing
 $u\leftrightarrow n+1-u$ seen in several records is a candidate streamliner in the sense
-of~\citep{VoborilRamaswamySzeider2025}. (2)~Close the gap
-between $c_2=0.0107$ and $0.120$. A sharper lower bound might weight pairs by distance instead of
-counting close pairs in boxes. (3)~Determine the minimising permuton for $k=2$.
-(4)~Prove Kusner's conjecture for $\ell_1$, which would show that perfectly balanced
-$k\times n$ rectangles need $k\ge n/2$.
+of~\citep{VoborilRamaswamySzeider2025}. (2)~Close the gap between $c_2=0.0107$ and $0.1196$. A
+sharper lower bound might weight each close pair by its shortfall $t-d$ instead of the worst case
+inside a box. For the limit problem, a quadratic minimisation over permutons, discretising to
+doubly stochastic matrices and applying a semidefinite relaxation is a route to a certified lower
+bound. (3)~Determine the minimising permuton for $k=2$. (4)~Find the order in $k$ of the constants in
+\cref{thm:cubic}, between $4^{-k}$ and $\sqrt k$, and the transition to order $n^2$ for squares.
+(5)~Show directly that a perfectly balanced $k\times n$ rectangle needs $k\ge n/2$, using that its
+coordinate projections are bijections. This would follow from Kusner's conjecture for $\ell_1$, a
+long-standing problem in geometry, but may be easier for these special point sets.
 
 \paragraph{Data and code.} Rectangles, the annealing code, the branch and bound, the exact
 checker and the scripts for every figure are at
