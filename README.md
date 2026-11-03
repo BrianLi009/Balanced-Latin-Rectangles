@@ -12,6 +12,12 @@ Balanced Latin Rectangles*. It adds the row-group explanation, a branch-and-boun
 the Θ(n³) lower bound for fixed k, and 2×n results for 14 ≤ n ≤ 64. The source in `arxiv/` is self-contained
 (set `arxiv/main.tex` as the main document in Overleaf).
 
+**Lean 4 formalization:** [`lean/`](lean/). All 62 rectangles in this repository (the 51 benchmark
+instances and the 2 × n rectangles for 14 ≤ n ≤ 64) are checked in Lean's kernel: each is Latin and has
+exactly the stated imbalance. The check trusts only a 74-line specification in core Lean, with no
+`native_decide` and no Mathlib. The pigeonhole theorem and the Θ(n³) cubic law are proved with Mathlib.
+Run `cd lean && lake exe cache get && lake build`; details are in [`lean/README.md`](lean/README.md).
+
 <!-- RESULTS:START -->
 
 ## Results

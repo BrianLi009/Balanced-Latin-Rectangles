@@ -1,0 +1,16 @@
+name = "BalancedLatin"
+version = "0.1.0"
+defaultTargets = ["BalancedLatin"]
+
+[leanOptions]
+pp.unicode.fun = true
+relaxedAutoImplicit = false
+autoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "045acef0f761280401116e3801cb78ed1b2e716b"
+
+[[lean_lib]]
+name = "BalancedLatin"
